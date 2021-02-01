@@ -36,10 +36,10 @@ func isExist (route Route) (bool, int) {
 	return false,-1
 }
 
-func Add (route Route) error {
+func AddRoute (route Route) error {
 	if oke,_ := isExist(route); oke {
 		return &ExistingRouteError{route: route}
-	} else if route.IsValid() {
+	} else if !route.IsValid() {
 		return &InvalidRouteError{route: route}
 	} else {
 		routes = append(routes, route)
@@ -47,11 +47,11 @@ func Add (route Route) error {
 	}
 }
 
-func AddAll (rs []Route) error {
+func AddAllRoute (rs []Route) error {
 	for _,route := range rs {
 		if oke,_ := isExist(route); oke {
 			return &ExistingRouteError{route: route}
-		} else if route.IsValid() {
+		} else if !route.IsValid() {
 			return &InvalidRouteError{route: route}
 		} else {
 			routes = append(routes, route)
@@ -60,7 +60,7 @@ func AddAll (rs []Route) error {
 	return nil
 }
 
-func Get (method string, url string) Route {
+func GetRoute (method string, url string) Route {
 	route := Route{
 		HttpMethod: method,
 		Url: url,
@@ -72,10 +72,10 @@ func Get (method string, url string) Route {
 	return Route{}
 }
 
-func GetAt (i int) Route {
+func GetRouteAt (i int) Route {
 	return routes[i]
 }
 
-func GetAll () []Route {
+func GetAllRoute () []Route {
 	return routes
 }
