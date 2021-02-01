@@ -49,8 +49,8 @@ func generateMuxRouter () *mux.Router {
 	r.MethodNotAllowedHandler = methodNotAllowedHandler()
 	r.NotFoundHandler = notFoundHandler()
 
-	for i, _ := range GetAll() {
-		rr := GetAt(i)
+	for i, _ := range GetAllRoute() {
+		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
 			handleRequest(w, r, rr.Func)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
