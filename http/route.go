@@ -1,7 +1,6 @@
-package route
+package http
 
 import (
-	http2 "github.com/dimall-id/lumos/http"
 	"net/http"
 )
 
@@ -9,7 +8,7 @@ type Route struct {
 	Name string
 	HttpMethod string
 	Url	string
-	Func func (r *http.Request) (interface{}, http2.HttpError)
+	Func func (r *http.Request) (interface{}, HttpError)
 }
 
 func (r *Route) IsValid() bool {

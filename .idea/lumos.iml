@@ -2,7 +2,8 @@
 <module type="WEB_MODULE" version="4">
   <component name="Go" enabled="true" />
   <component name="NewModuleRootManager">
-    <content url="file://$USER_HOME$/Workspace/Lumos" />
+    <content url="file://$USER_HOME$/Workspace/02_LEARNING/api-02-example" />
+    <content url="file://$USER_HOME$/Workspace/02_LEARNING/api-04-learning" />
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
