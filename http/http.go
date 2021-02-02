@@ -28,7 +28,7 @@ func notFoundHandler() http.Handler {
 	})
 }
 
-func handleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
+func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
@@ -44,7 +44,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Reque
 	w.Write(res)
 }
 
-func generateMuxRouter () *mux.Router {
+func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
 	r := mux.NewRouter()
 	r.MethodNotAllowedHandler = methodNotAllowedHandler()
 	r.NotFoundHandler = notFoundHandler()
@@ -52,14 +52,19 @@ func generateMuxRouter () *mux.Router {
 	for i, _ := range GetAllRoute() {
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
-			handleRequest(w, r, rr.Func)
+			HandleRequest(w, r, rr.Func)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
+	}
+
+	for _, mwr := range GetAllMiddleware() {
+		mw := mwr
+		r.Use(mw)
 	}
 
 	return r
 }
 
 func StartHttpServer(port string) error {
-	r := generateMuxRouter()
+	r := GenerateMuxRouter(routes, middlewares)
 	return http.ListenAndServe(port, r)
 }

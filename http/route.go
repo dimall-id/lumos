@@ -2,6 +2,8 @@ package http
 
 import (
 	"net/http"
+	url2 "net/url"
+	"strings"
 )
 
 type Route struct {
@@ -12,6 +14,14 @@ type Route struct {
 }
 
 func (r *Route) IsValid() bool {
+	hm := "GETPOSTPUTPATCHDELETEOPTIONS"
+	if !strings.Contains(hm, r.HttpMethod) {
+		return false
+	}
+	_, err := url2.Parse(r.Url)
+ 	if err != nil {
+ 		return false
+	}
 	if r.Name == "" || r.HttpMethod == "" || r.Url == "" || r.Func == nil {
 		return false
 	}
@@ -48,15 +58,21 @@ func AddRoute (route Route) error {
 }
 
 func AddAllRoute (rs []Route) error {
+	for i, r1 := range rs {
+		for j, r2 := range rs {
+			if i != j && r1.Equal(r2) {
+				return &DoubleRouteError{r1: i, r2: j}
+			}
+		}
+	}
 	for _,route := range rs {
 		if oke,_ := isExist(route); oke {
 			return &ExistingRouteError{route: route}
 		} else if !route.IsValid() {
 			return &InvalidRouteError{route: route}
-		} else {
-			routes = append(routes, route)
 		}
 	}
+	routes = append(routes, rs...)
 	return nil
 }
 
@@ -73,6 +89,9 @@ func GetRoute (method string, url string) Route {
 }
 
 func GetRouteAt (i int) Route {
+	if i >= len(routes) {
+		return Route{}
+	}
 	return routes[i]
 }
 

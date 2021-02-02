@@ -96,3 +96,12 @@ type ExistingRouteError struct {
 func (er *ExistingRouteError) Error() string {
 	return fmt.Sprintf("Existing Route with Http Method : %s and Url : %s existed", er.route.HttpMethod, er.route.Url)
 }
+
+type DoubleRouteError struct {
+	r1 int
+	r2 int
+}
+
+func (dr *DoubleRouteError) Error() string {
+	return fmt.Sprintf("Double Route found in the list. Check at index %d and %d", dr.r1, dr.r2)
+}
