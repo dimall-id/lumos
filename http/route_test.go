@@ -18,6 +18,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			expect: true,
 		},
@@ -28,6 +29,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			expect: false,
 		},
@@ -39,6 +41,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			expect: false,
 		},
@@ -78,6 +81,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			expect: true,
 		},
@@ -133,6 +137,7 @@ func TestAddRoute(t *testing.T) {
 			Func: func(r *http.Request) (interface{}, HttpError) {
 				return nil, HttpError{}
 			},
+			Roles: []string{"USER"},
 		}
 		if err := AddRoute(r2); err != nil {
 			t.Error("Fail to test, an invalid route can't be added to routes")
@@ -173,6 +178,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			{
 				Name: "Product List",
@@ -181,6 +187,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 		}
 		if err := AddAllRoute(r2s); err == nil {
@@ -194,6 +201,7 @@ func TestAddAllRoute(t *testing.T) {
 			Func: func(r *http.Request) (interface{}, HttpError) {
 				return nil, HttpError{}
 			},
+			Roles: []string{"USER"},
 		})
 
 		r3s := []Route{
@@ -204,6 +212,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 		}
 		if err := AddAllRoute(r3s); err == nil {
@@ -218,6 +227,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			{
 				Name:       "Product Delete",
@@ -226,6 +236,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 			{
 				Name:       "Product Update",
@@ -234,6 +245,7 @@ func TestAddAllRoute(t *testing.T) {
 				Func: func(r *http.Request) (interface{}, HttpError) {
 					return nil, HttpError{}
 				},
+				Roles: []string{"USER"},
 			},
 		}
 		if err := AddAllRoute(r4s); err != nil {
@@ -251,6 +263,7 @@ func TestGetRoute(t *testing.T) {
 			Func: func(r *http.Request) (interface{}, HttpError) {
 				return nil, HttpError{}
 			},
+			Roles: []string{"USER"},
 		},
 		{
 			Name:       "Product Delete",
@@ -259,6 +272,7 @@ func TestGetRoute(t *testing.T) {
 			Func: func(r *http.Request) (interface{}, HttpError) {
 				return nil, HttpError{}
 			},
+			Roles: []string{"USER"},
 		},
 		{
 			Name:       "Product Update",
@@ -267,6 +281,7 @@ func TestGetRoute(t *testing.T) {
 			Func: func(r *http.Request) (interface{}, HttpError) {
 				return nil, HttpError{}
 			},
+			Roles: []string{"USER"},
 		},
 	}
 	AddAllRoute(r4s)

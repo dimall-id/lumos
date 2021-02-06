@@ -10,6 +10,7 @@ type Route struct {
 	Name string
 	HttpMethod string
 	Url	string
+	Roles []string
 	Func func (r *http.Request) (interface{}, HttpError)
 }
 
@@ -23,6 +24,9 @@ func (r *Route) IsValid() bool {
  		return false
 	}
 	if r.Name == "" || r.HttpMethod == "" || r.Url == "" || r.Func == nil {
+		return false
+	}
+	if len(r.Roles) <= 0 {
 		return false
 	}
 	return true

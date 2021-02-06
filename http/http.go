@@ -29,9 +29,6 @@ func notFoundHandler() http.Handler {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-
 	data, err := f(r)
 	var res []byte
 	if err.Message != "" {
@@ -56,6 +53,8 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
+	r.Use(ContentTypeMiddleware)
+	r.Use(JwtMiddleware)
 	for _, mwr := range GetAllMiddleware() {
 		mw := mwr
 		r.Use(mw)
