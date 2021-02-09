@@ -2,7 +2,9 @@ package data
 
 import (
 	"github.com/dimall-id/lumos/data/builder"
+	"github.com/dimall-id/lumos/misc"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 type QueryBuilder interface {
@@ -56,10 +58,26 @@ func (q *Query) BuildResponse (queries map[string]string, result interface{}, pa
 		}
 	}
 
-	q.db.Find(result)
-	res := builder.HttpResponse{
-		Data: result,
+	if val, ok := queries["paging"]; ok {
+		if builder.IsPagingValid(val) {
+			paging := misc.BuildToMap(builder.PagingPattern, val)
+			page,_ := strconv.ParseInt(paging["page"], 10, 32)
+			perPage,_ := strconv.ParseInt(paging["per_page"], 10, 32)
+			return *builder.Paging(&builder.Param{
+				DB: q.db,
+				Page: int(page),
+				PerPage: int(perPage),
+				ShowSQL: true,
+				Path: path,
+			}, result)
+		}
 	}
-	return res
-}
 
+	var count int64
+	q.db.Count(&count)
+	q.db.Find(result)
+	return builder.HttpResponse{
+		Data: result,
+		Total: int(count),
+	}
+}

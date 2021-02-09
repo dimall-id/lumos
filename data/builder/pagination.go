@@ -3,6 +3,7 @@ package builder
 import (
 	"gorm.io/gorm"
 	"math"
+	"regexp"
 )
 
 type HttpResponse struct {
@@ -24,6 +25,10 @@ type Param struct {
 	Path string
 	ShowSQL bool
 }
+
+const (
+	PagingPattern = "\\[page:(?P<page>[\\d]+),per_page:(?P<per_page>[\\d]+)\\]"
+)
 
 func Paging (p *Param, result interface{}) *HttpResponse {
 	db := p.DB
@@ -57,7 +62,7 @@ func Paging (p *Param, result interface{}) *HttpResponse {
 	results.Total = int(count)
 	results.Data = result
 	results.CurrentPage = p.Page
-	results.LastPage = int(math.Ceil(float64(count) / float64(p.PerPage)))
+	results.LastPageNumber = int(math.Ceil(float64(count) / float64(p.PerPage)))
 
 	return &results
 }
@@ -65,4 +70,9 @@ func Paging (p *Param, result interface{}) *HttpResponse {
 func countRecords(db *gorm.DB, anyType interface{}, done chan bool, count *int64) {
 	db.Model(anyType).Count(count)
 	done <- true
+}
+
+func IsPagingValid(value string) bool {
+	r := regexp.MustCompile(PagingPattern)
+	return r.MatchString(value)
 }
