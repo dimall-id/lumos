@@ -64,14 +64,6 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	return r
 }
 
-func TransformQuery (queries map[string][]string) map[string]string {
-	var results = make(map[string]string)
-	for field, query := range queries {
-		results[field] = query[0]
-	}
-	return results
-}
-
 func StartHttpServer(port string) error {
 	r := GenerateMuxRouter(routes, middlewares)
 	return http.ListenAndServe(port, r)

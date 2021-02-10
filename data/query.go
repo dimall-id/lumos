@@ -4,6 +4,8 @@ import (
 	"github.com/dimall-id/lumos/data/builder"
 	"github.com/dimall-id/lumos/misc"
 	"gorm.io/gorm"
+	"net/http"
+	"regexp"
 	"strconv"
 )
 
@@ -50,7 +52,24 @@ func (q *Query) GetBuilder (value string) QueryBuilder {
 	return nil
 }
 
-func (q *Query) BuildResponse (queries map[string]string, result interface{}, path string) builder.HttpResponse {
+func (q *Query) Query (queries string) map[string]string {
+	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%]+))+`)
+	exps := r.FindAllStringSubmatch(queries, -1)
+	var results = make(map[string]string)
+	var keys = make(map[string]int)
+	for i, key := range r.SubexpNames() {
+		if key != "" {
+			keys[key] = i
+		}
+	}
+	for _, exp := range exps {
+		results[exp[keys["key"]]] = exp[keys["value"]]
+	}
+	return results
+}
+
+func (q *Query) BuildResponse (r *http.Request, result interface{}) builder.HttpResponse {
+	queries := q.Query(r.URL.RawQuery)
 	for field, condition := range queries {
 		b := q.GetBuilder(condition)
 		if b != nil {
@@ -68,13 +87,13 @@ func (q *Query) BuildResponse (queries map[string]string, result interface{}, pa
 				Page: int(page),
 				PerPage: int(perPage),
 				ShowSQL: true,
-				Path: path,
+				Path: r.URL.Path,
 			}, result)
 		}
 	}
 
 	var count int64
-	q.db.Count(&count)
+	q.db.Model(result).Count(&count)
 	q.db.Find(result)
 	return builder.HttpResponse{
 		Data: result,
