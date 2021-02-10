@@ -48,7 +48,7 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	r.MethodNotAllowedHandler = methodNotAllowedHandler()
 	r.NotFoundHandler = notFoundHandler()
 
-	for i, _ := range GetAllRoute() {
+	for i, _ := range routes {
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
 			HandleRequest(w, r, rr.Func)
@@ -56,12 +56,20 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	}
 
 	r.Use(ContentTypeMiddleware)
-	for _, mwr := range GetAllMiddleware() {
+	for _, mwr := range middleware {
 		mw := mwr
 		r.Use(mw)
 	}
 
 	return r
+}
+
+func TransformQuery (queries map[string][]string) map[string]string {
+	var results = make(map[string]string)
+	for field, query := range queries {
+		results[field] = query[0]
+	}
+	return results
 }
 
 func StartHttpServer(port string) error {
