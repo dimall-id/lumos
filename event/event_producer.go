@@ -6,7 +6,6 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Config struct {
@@ -20,17 +19,6 @@ type DatasourceConfig struct {
 	User string
 	Password string
 	Database string
-}
-
-type Outbox struct {
-	Id int `gorm:"id,type:BIGSERIAL"`
-	createTime time.Time `gorm:"create_time"`
-	KafkaTopic string `gorm:"kafka_topic,size:255,notNull"`
-	KafkaKey string `gorm:"kafka_topic,size:255,notNull"`
-	KafkaValue string `gorm:"kafka_topic,size:100000"`
-	KafkaHeaderKeys []string `gorm:"kafka_header_keys,type:TEXT[],notNull"`
-	KafkaHeaderValues []string`gorm:"kafka_header_values,type:TEXT[],notNull"`
-	LeaderId string `gorm:"leader_id,type:UUID"`
 }
 
 func initOutboxTable (config Config) error {
@@ -52,7 +40,17 @@ func initOutboxTable (config Config) error {
 		return err
 	}
 	defer sqlDB.Close()
-	err = db.AutoMigrate(Outbox{})
+	_, err = sqlDB.Exec(`
+		CREATE TABLE IF NOT EXISTS outbox (
+		  id                  BIGSERIAL PRIMARY KEY,
+		  create_time         TIMESTAMP WITH TIME ZONE NOT NULL,
+		  kafka_topic         VARCHAR(500) NOT NULL,
+		  kafka_key           VARCHAR(500) NOT NULL,  -- pick your own maximum key size
+		  kafka_value         VARCHAR(40000),         -- pick your own maximum value size
+		  kafka_header_keys   TEXT[] NOT NULL,
+		  kafka_header_values TEXT[] NOT NULL,
+		  leader_id           UUID
+		)`)
 	if err != nil {
 		return err
 	}
