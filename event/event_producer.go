@@ -143,4 +143,5 @@ func SendOutbox (config DatasourceConfig, topic string, key string, value string
 
 	// Commit the transaction.
 	tx.Commit()
+	return nil
 }
