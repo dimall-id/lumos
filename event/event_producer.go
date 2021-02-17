@@ -20,6 +20,7 @@ type DatasourceConfig struct {
 	User string
 	Password string
 	Database string
+	Sslmode string
 }
 
 func initOutboxTable (config Config) error {
@@ -70,12 +71,13 @@ func StartProducer (config Config) error {
 	}
 
 	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
 		config.DatasourceConfig.Host,
 		config.DatasourceConfig.User,
 		config.DatasourceConfig.Password,
 		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port)
+		config.DatasourceConfig.Port,
+		config.DatasourceConfig.Sslmode)
 
 	hConfig := harvest.Config{
 		BaseKafkaConfig: kafkaConfig,
