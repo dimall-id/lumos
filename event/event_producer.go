@@ -94,6 +94,8 @@ func StartProducer (config Config) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) error {
