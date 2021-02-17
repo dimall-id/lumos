@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	harvest "github.com/obsidiandynamics/goharvest"
-	stasher "github.com/obsidiandynamics/goharvest/stasher"
+	"github.com/obsidiandynamics/goharvest/stasher"
 )
 
 type Config struct {
@@ -98,7 +98,7 @@ func StartProducer (config Config) error {
 	return harvest.Await()
 }
 
-func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) {
+func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) error {
 
 	connString := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
@@ -111,7 +111,7 @@ func SendOutbox (config DatasourceConfig, topic string, key string, value string
 
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer db.Close()
 
@@ -138,7 +138,7 @@ func SendOutbox (config DatasourceConfig, topic string, key string, value string
 		KafkaHeaders: kHeaders,
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Commit the transaction.
