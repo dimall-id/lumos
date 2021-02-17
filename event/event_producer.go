@@ -90,12 +90,7 @@ func StartProducer (config Config) error {
 		return err
 	}
 
-	err = harvest.Start()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return harvest.Start()
 }
 
 func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) error {
