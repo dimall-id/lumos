@@ -24,15 +24,15 @@ func (n *NoCallbackRegisteredError) Error() string {
 	return "No callback registered"
 }
 
-type Callback func(topic string, data string) error
+type Callback func(message kafka.Message) error
 
 var callbacks = make(map[string]Callback)
 
-func AddCallback (topic string, e Callback) error {
+func AddCallback (topic string, callback Callback) error {
 	if _, oke := callbacks[topic]; oke {
 		return &ExistingCallbackError{topic}
 	} else {
-		callbacks[topic] = e
+		callbacks[topic] = callback
 	}
 	return nil
 }
@@ -68,7 +68,7 @@ func StartConsumer(config *kafka.ConfigMap) error {
 		case *kafka.Message:
 			topic := *e.TopicPartition.Topic
 			if callback, oke := callbacks[topic]; oke {
-				err = callback(*e.TopicPartition.Topic, string(e.Value))
+				err = callback(*e)
 				if err == nil {
 					_, err = c.CommitMessage(e)
 					if err != nil {
@@ -80,11 +80,9 @@ func StartConsumer(config *kafka.ConfigMap) error {
 			}
 			break
 		case *kafka.Error:
-			fmt.Printf("%% Reached %v\n", e)
+			fmt.Printf("%% Error %v\n", e)
 		case *kafka.PartitionEOF:
 			fmt.Printf("%% Reached %v\n", e)
-		default:
-			fmt.Printf("Ignored %v\n", e)
 		}
 	}
 }
