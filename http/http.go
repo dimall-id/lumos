@@ -1,30 +1,30 @@
 package http
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
-	"net/http"
 	"github.com/vmihailenco/msgpack/v5"
+	"net/http"
 )
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/x-msgpack; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		err := MethodNotAllow()
 		w.WriteHeader(err.Code)
-		res, _ := json.Marshal(err)
+		res, _ := msgpack.Marshal(err)
 		w.Write(res)
 	})
 }
 
 func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/x-msgpack; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		err := NotFound()
 		w.WriteHeader(err.Code)
-		res, _ := json.Marshal(err)
+		res, _ := msgpack.Marshal(err)
 		w.Write(res)
 	})
 }
@@ -41,6 +41,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Reque
 		res, _ = msgpack.Marshal(data)
 	}
 
+	fmt.Println(res)
 	w.Write(res)
 }
 
