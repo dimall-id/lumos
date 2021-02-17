@@ -3,7 +3,6 @@ package event
 import (
 	"fmt"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
-	"log"
 )
 
 type ExistingCallbackError struct {
@@ -50,7 +49,6 @@ func StartConsumer(config *kafka.ConfigMap) error {
 	if len(callbacks) == 0 {return &NoCallbackRegisteredError{}}
 
 	c, err := kafka.NewConsumer(config)
-
 	if err != nil {
 		return err
 	}
@@ -64,9 +62,8 @@ func StartConsumer(config *kafka.ConfigMap) error {
 	if err != nil {
 		return err
 	}
-	defer log.Fatalln(c.Close())
 	for {
-		ev := c.Poll(0)
+		ev := c.Poll(100)
 		switch e := ev.(type) {
 		case *kafka.Message:
 			topic := *e.TopicPartition.Topic
@@ -78,12 +75,12 @@ func StartConsumer(config *kafka.ConfigMap) error {
 						return err
 					}
 				} else {
-					return nil
+					return err
 				}
 			}
 			break
 		case *kafka.Error:
-			log.Printf("Kakfa Error : %v", e)
+			fmt.Printf("%% Reached %v\n", e)
 		case *kafka.PartitionEOF:
 			fmt.Printf("%% Reached %v\n", e)
 		default:
