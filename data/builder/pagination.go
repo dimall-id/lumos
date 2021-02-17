@@ -7,15 +7,15 @@ import (
 )
 
 type HttpResponse struct {
-	CurrentPage int `json:"current_page,omitempty"`
-	LastPageNumber int `json:"last_page_number,omitempty"`
-	Total int `json:"total,omitempty"`
+	TotalRecord int `json:"total_record,omitempty"`
+	TotalPage int `json:"total_page,omitempty"`
+	Page int `json:"page,omitempty"`
 	PerPage int `json:"per_page,omitempty"`
-	Data interface{} `json:"data"`
-	PrevPage string `json:"prev_page,omitempty"`
-	NextPage string `json:"nex_page,omitempty"`
-	FirstPage string `json:"first_page,omitempty"`
-	LastPage string `json:"last_page,omitempty"`
+	PrevPage int `json:"prev_page,omitempty"`
+	NextPage int `json:"next_page,omitempty"`
+	FirstPage int `json:"first_page,omitempty"`
+	LastPage int `json:"last_page,omitempty"`
+	Records interface{} `json:"records"`
 }
 
 type Param struct {
@@ -59,10 +59,14 @@ func Paging (p *Param, result interface{}) *HttpResponse {
 	db.Limit(p.PerPage).Offset(offset).Find(result)
 	<-done
 
-	results.Total = int(count)
-	results.Data = result
-	results.CurrentPage = p.Page
-	results.LastPageNumber = int(math.Ceil(float64(count) / float64(p.PerPage)))
+	results.TotalRecord = int(count)
+	results.Records = result
+	results.Page = p.Page
+	results.TotalPage = int(math.Ceil(float64(count) / float64(p.PerPage)))
+	results.LastPage = results.TotalPage
+	results.FirstPage = 1
+	if p.Page > 1 { results.PrevPage = p.Page - 1 }
+	if p.Page < results.LastPage { results.NextPage = p.Page + 1 }
 
 	return &results
 }

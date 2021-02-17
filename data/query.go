@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"github.com/dimall-id/lumos/data/builder"
 	"github.com/dimall-id/lumos/misc"
 	"gorm.io/gorm"
@@ -8,6 +9,20 @@ import (
 	"regexp"
 	"strconv"
 )
+
+type ExistingQueryBuilderError struct {
+	key string
+}
+func (e *ExistingQueryBuilderError) Error() string {
+	return fmt.Sprintf("Existing Query Builder with key '%s' is found", e.key)
+}
+
+type NoExistingQueryBuilderError struct {
+	key string
+}
+func (e *NoExistingQueryBuilderError) Error() string {
+	return fmt.Sprintf("No Existing Query Builder with key '%s' is found", e.key)
+}
 
 type QueryBuilder interface {
 	IsValid (value string) bool
@@ -35,12 +50,20 @@ func New (db *gorm.DB) Query  {
 	}
 }
 
-func (q *Query) AddBuilder (key string, builder QueryBuilder) {
+func (q *Query) AddBuilder (key string, builder QueryBuilder) error {
+	if _, oke := q.builders[key]; oke {
+		return &ExistingQueryBuilderError{key: key}
+	}
 	q.builders[key] = builder
+	return nil
 }
 
-func (q *Query) RemoveBuilder (key string) {
+func (q *Query) RemoveBuilder (key string) error {
+	if _, oke := q.builders[key]; !oke {
+		return &NoExistingQueryBuilderError{key: key}
+	}
 	delete(q.builders, key)
+	return nil
 }
 
 func (q *Query) GetBuilder (value string) QueryBuilder {
@@ -96,7 +119,7 @@ func (q *Query) BuildResponse (r *http.Request, result interface{}) builder.Http
 	q.db.Model(result).Count(&count)
 	q.db.Find(result)
 	return builder.HttpResponse{
-		Data: result,
-		Total: int(count),
+		Records: result,
+		TotalRecord: int(count),
 	}
 }
