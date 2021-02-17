@@ -27,7 +27,7 @@ func (n *NoCallbackRegisteredError) Error() string {
 
 type Callback func(topic string, data string) error
 
-var callbacks map[string]Callback
+var callbacks = make(map[string]Callback)
 
 func AddCallback (topic string, e Callback) error {
 	if _, oke := callbacks[topic]; oke {
