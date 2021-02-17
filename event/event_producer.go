@@ -3,7 +3,6 @@ package event
 import (
 	"database/sql"
 	"fmt"
-	"github.com/spf13/viper"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -37,11 +36,11 @@ type Outbox struct {
 func initOutboxTable (config Config) error {
 	connString := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
-		viper.GetString(config.DatasourceConfig.Host),
-		viper.GetString(config.DatasourceConfig.User),
-		viper.GetString(config.DatasourceConfig.Password),
-		viper.GetString(config.DatasourceConfig.Database),
-		viper.GetString(config.DatasourceConfig.Port))
+		config.DatasourceConfig.Host,
+		config.DatasourceConfig.User,
+		config.DatasourceConfig.Password,
+		config.DatasourceConfig.Database,
+		config.DatasourceConfig.Port)
 
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {
