@@ -16,3 +16,6 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestQuery_Query(t *testing.T) {
+
+}

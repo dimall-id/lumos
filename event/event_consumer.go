@@ -86,24 +86,3 @@ func StartConsumer(config *kafka.ConfigMap) error {
 		}
 	}
 }
-//
-//func StartProducer () error {
-//	config := harvest.Config{
-//		BaseKafkaConfig: harvest.KafkaConfigMap{
-//			"bootstrap.servers" : config.GetString("kafka.servers"),
-//		},
-//		DataSource: "",
-//	}
-//
-//	h, err := harvest.New(config)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	err = h.Start()
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	return h.Await()
-//}
