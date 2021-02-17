@@ -9,7 +9,7 @@ import (
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/x-msgpack")
+		w.Header().Set("Content-Type", "application/vnd.msgpack")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		err := MethodNotAllow()
 		w.WriteHeader(err.Code)
@@ -20,7 +20,7 @@ func methodNotAllowedHandler() http.Handler {
 
 func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/x-msgpack")
+		w.Header().Set("Content-Type", "application/vnd.msgpack")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		err := NotFound()
 		w.WriteHeader(err.Code)
@@ -30,7 +30,7 @@ func notFoundHandler() http.Handler {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
-	w.Header().Set("Content-Type", "application/x-msgpack")
+	w.Header().Set("Content-Type", "application/vnd.msgpack")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	data, err := f(r)
 	var res []byte
