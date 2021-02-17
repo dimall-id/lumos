@@ -3,9 +3,11 @@ package event
 import (
 	"database/sql"
 	"fmt"
+	"github.com/spf13/viper"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	harvest "github.com/obsidiandynamics/goharvest"
 )
 
 type Config struct {
@@ -62,5 +64,34 @@ func StartProducer (config Config) error {
 	if err != nil {
 		return nil
 	}
-	return nil
+
+	kafkaConfig := harvest.KafkaConfigMap{}
+	for key, value := range config.KafkaConfig {
+		kafkaConfig[key] = value
+	}
+
+	connString := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
+		config.DatasourceConfig.Host,
+		config.DatasourceConfig.User,
+		config.DatasourceConfig.Password,
+		config.DatasourceConfig.Database,
+		config.DatasourceConfig.Port)
+
+	hConfig := harvest.Config{
+		BaseKafkaConfig: kafkaConfig,
+		DataSource: connString,
+	}
+
+	harvest, err := harvest.New(hConfig)
+	if err != nil {
+		return err
+	}
+
+	err = harvest.Start()
+	if err != nil {
+		return err
+	}
+
+	return harvest.Await()
 }
