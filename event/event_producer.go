@@ -3,7 +3,6 @@ package event
 import (
 	"database/sql"
 	"fmt"
-	"github.com/spf13/viper"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
