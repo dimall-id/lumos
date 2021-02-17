@@ -109,6 +109,8 @@ func SendOutbox (config DatasourceConfig, topic string, key string, value string
 		config.Port,
 		config.Sslmode)
 
+	fmt.Println(connString)
+
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
 		return err
@@ -131,6 +133,10 @@ func SendOutbox (config DatasourceConfig, topic string, key string, value string
 			Value: value,
 		})
 	}
+	fmt.Println(tx)
+	fmt.Println(topic)
+	fmt.Println(key)
+	fmt.Println(value)
 	err = st.Stash(tx, harvest.OutboxRecord{
 		KafkaTopic: topic,
 		KafkaKey:   key,
