@@ -10,6 +10,7 @@ require (
 	github.com/obsidiandynamics/goharvest v0.3.1 // indirect
 	github.com/obsidiandynamics/goneli v0.5.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/vmihailenco/msgpack/v5 v5.2.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gorm.io/driver/postgres v1.0.8

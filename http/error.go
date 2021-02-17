@@ -6,9 +6,9 @@ import (
 )
 
 type HttpError struct {
-	Code int `json:"code"`
-	Message string `json:"message"`
-	Errors map[string][]string `json:"errors,omitempty"`
+	Code int `json:"code" msgpack:"code"`
+	Message string `json:"message" msgpack:"message"`
+	Errors map[string][]string `json:"errors,omitempty" msgpack:"errors,as_array,omitempty"`
 }
 
 func InternalServerError() HttpError {

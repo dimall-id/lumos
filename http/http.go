@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 func methodNotAllowedHandler() http.Handler {
@@ -29,15 +30,15 @@ func notFoundHandler() http.Handler {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/x-msgpack; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	data, err := f(r)
 	var res []byte
 	if err.Message != "" {
 		w.WriteHeader(err.Code)
-		res, _ = json.Marshal(err)
+		res, _ = msgpack.Marshal(err)
 	} else {
-		res, _ = json.Marshal(data)
+		res, _ = msgpack.Marshal(data)
 	}
 
 	w.Write(res)
