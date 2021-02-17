@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	harvest "github.com/obsidiandynamics/goharvest"
+	stasher "github.com/obsidiandynamics/goharvest/stasher"
 )
 
 type Config struct {
@@ -95,4 +96,51 @@ func StartProducer (config Config) error {
 	}
 
 	return harvest.Await()
+}
+
+func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) {
+
+	connString := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
+		config.Host,
+		config.User,
+		config.Password,
+		config.Database,
+		config.Port,
+		config.Sslmode)
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	st := stasher.New("outbox")
+
+	// Begin a transaction.
+	tx, _ := db.Begin()
+	defer tx.Rollback()
+
+	// Update other database entities in transaction scope.
+
+	// Stash an outbox record for subsequent harvesting.
+	kHeaders := harvest.KafkaHeaders{}
+	for key, value := range headers {
+		kHeaders = append(kHeaders, harvest.KafkaHeader{
+			Key : key,
+			Value: value,
+		})
+	}
+	err = st.Stash(tx, harvest.OutboxRecord{
+		KafkaTopic: topic,
+		KafkaKey:   key,
+		KafkaValue: harvest.String(value),
+		KafkaHeaders: kHeaders,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Commit the transaction.
+	tx.Commit()
 }
