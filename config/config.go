@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/spf13/viper"
 	"log"
-	"strings"
 )
 
 var config = viper.New()
@@ -14,9 +13,6 @@ func InitConfig () {
 	err := config.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
-	}
-	if strings.ToUpper(config.GetString("service.env")) == "PROD" && config.InConfig("etcd.") {
-
 	}
 }
 

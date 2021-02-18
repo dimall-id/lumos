@@ -6,13 +6,14 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	harvest "github.com/obsidiandynamics/goharvest"
-	"github.com/obsidiandynamics/goharvest/stasher"
+	"strings"
+	"time"
 )
 
 type Config struct {
 	KafkaConfig kafka.ConfigMap
 	DatasourceConfig DatasourceConfig
+	PoolDuration time.Duration
 }
 
 type DatasourceConfig struct {
@@ -21,56 +22,27 @@ type DatasourceConfig struct {
 	User string
 	Password string
 	Database string
-	Sslmode string
+	SslMode string
 }
 
-func initOutboxTable (config Config) error {
-	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
-		config.DatasourceConfig.Host,
-		config.DatasourceConfig.User,
-		config.DatasourceConfig.Password,
-		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port)
+type LumosOutbox struct {
+	Id uint `gorm:"id,primaryKey,autoIncrement"`
+	KafkaTopic string `gorm:"kafka_topic,size:500"`
+	KafkaKey string `gorm:"kafka_key,size:500"`
+	KafkaValue string `gorm:"kafka_value,size:50000"`
+	KafkaHeaderKeys string `gorm:"kafka_header_keys,size:50000"`
+	KafkaHeaderValues string `gorm:"kafka_header_values,size:50000"`
+	CreatedAt time.Time `gorm:"created_at,notNull"`
+	DeliveredAt time.Time`gorm:"delivered_at"`
+	Status string `gorm:"status,100"`
+}
 
-	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
-	if err != nil {
-		return err
-	}
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
-	_, err = sqlDB.Exec(`
-		CREATE TABLE IF NOT EXISTS outbox (
-		  id                  BIGSERIAL PRIMARY KEY,
-		  create_time         TIMESTAMP WITH TIME ZONE NOT NULL,
-		  kafka_topic         VARCHAR(500) NOT NULL,
-		  kafka_key           VARCHAR(500) NOT NULL,  -- pick your own maximum key size
-		  kafka_value         VARCHAR(40000),         -- pick your own maximum value size
-		  kafka_header_keys   TEXT[] NOT NULL,
-		  kafka_header_values TEXT[] NOT NULL,
-		  leader_id           UUID
-		)`)
-	if err != nil {
-		return err
-	}
-	return nil
+func initOutboxTable (DB *gorm.DB) error {
+	err := DB.AutoMigrate(&LumosOutbox{})
+	return err
 }
 
 func StartProducer (config Config) error {
-	err := initOutboxTable(config)
-	if err != nil {
-		return nil
-	}
-
-	kafkaConfig := harvest.KafkaConfigMap{}
-	for key, value := range config.KafkaConfig {
-		kafkaConfig[key] = value
-	}
-
 	connString := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
 		config.DatasourceConfig.Host,
@@ -78,65 +50,120 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.Password,
 		config.DatasourceConfig.Database,
 		config.DatasourceConfig.Port,
-		config.DatasourceConfig.Sslmode)
+		config.DatasourceConfig.SslMode)
 
-	hConfig := harvest.Config{
-		BaseKafkaConfig: kafkaConfig,
-		DataSource: connString,
-	}
-
-	harvest, err := harvest.New(hConfig)
+	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {
 		return err
 	}
 
-	return harvest.Start()
+	var sqlDB *sql.DB
+	sqlDB, err = db.DB()
+	if err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(10)
+
+	defer sqlDB.Close()
+
+	err = initOutboxTable(db)
+	if err != nil {
+		return err
+	}
+
+	producer, err := kafka.NewProducer(&config.KafkaConfig)
+	if err != nil {
+		return err
+	}
+	defer producer.Close()
+
+	/**
+	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
+	 */
+	go func() {
+		for e := range producer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				var messageId string
+				for _,header := range ev.Headers {
+					if header.Key == "MESSAGE-ID" {
+						messageId = string(header.Value)
+						break
+					}
+				}
+				if ev.TopicPartition.Error != nil {
+					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
+				} else {
+					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
+				}
+			}
+		}
+	}()
+
+	for {
+		var messages []LumosOutbox
+		db.Where("status = QUEUE").Find(messages)
+		if len(messages) > 0 {
+			for _, message := range messages {
+				var keys = strings.Split(message.KafkaHeaderKeys, ",")
+				var values = strings.Split(message.KafkaHeaderValues, ",")
+				var headers = make([]kafka.Header, 0)
+				for idx , key := range keys {
+					if idx < len(values) {
+						headers = append(headers, kafka.Header{Key: key, Value: []byte(values[idx])})
+					}
+				}
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
+				producer.Produce(&kafka.Message{
+					TopicPartition: kafka.TopicPartition{Topic: &message.KafkaTopic, Partition: kafka.PartitionAny},
+					Value: []byte(message.KafkaValue),
+					Key: []byte(message.KafkaKey),
+					Headers: headers,
+				}, nil)
+			}
+		}
+
+		var PoolDuration time.Duration = 60
+		if &config.PoolDuration != nil {
+			PoolDuration = config.PoolDuration
+		}
+		time.Sleep(PoolDuration)
+		/**
+		Clear the data for GC to collect
+		 */
+		messages = nil
+	}
 }
 
-func SendOutbox (config DatasourceConfig, topic string, key string, value string, headers map[string]string) error {
+type LumosMessage struct {
+	Topic string
+	Key string
+	Value string
+	Headers map[string]string
+}
 
-	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
-		config.Host,
-		config.User,
-		config.Password,
-		config.Database,
-		config.Port,
-		config.Sslmode)
+func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 
-	db, err := sql.Open("postgres", connString)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	st := stasher.New("outbox")
-
-	// Begin a transaction.
-	tx, _ := db.Begin()
-	defer tx.Rollback()
-
-	// Update other database entities in transaction scope.
-
-	// Stash an outbox record for subsequent harvesting.
-	kHeaders := harvest.KafkaHeaders{}
-	for key, value := range headers {
-		kHeaders = append(kHeaders, harvest.KafkaHeader{
-			Key : key,
-			Value: value,
-		})
-	}
-	err = st.Stash(tx, harvest.OutboxRecord{
-		KafkaTopic: topic,
-		KafkaKey:   key,
-		KafkaValue: harvest.String(value),
-		KafkaHeaders: kHeaders,
-	})
-	if err != nil {
-		return err
+	var keys = make([]string, len(message.Headers))
+	var values = make([]string, len(message.Headers))
+	var i = 0
+	for k, v := range message.Headers {
+		keys[i] = k
+		values[i] = v
+		i ++
 	}
 
-	// Commit the transaction.
-	tx.Commit()
-	return nil
+	data := LumosOutbox{
+		KafkaTopic: message.Topic,
+		KafkaKey: message.Key,
+		KafkaValue: message.Value,
+		KafkaHeaderKeys: strings.Join(keys[:], ","),
+		KafkaHeaderValues: strings.Join(values[:], ","),
+		CreatedAt: time.Now(),
+	}
+
+	tx := DB.Save(data)
+
+	return tx.Error
 }
