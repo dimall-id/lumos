@@ -28,14 +28,14 @@ type DatasourceConfig struct {
 
 type LumosOutbox struct {
 	Id string `gorm:"id,primaryKey;type:varchar;size:50"`
-	KafkaTopic string `gorm:"kafka_topic;type:varchar;size:500"`
-	KafkaKey string `gorm:"kafka_key;type:varchar;size:500"`
-	KafkaValue string `gorm:"kafka_value;type:varchar;size:50000"`
+	KafkaTopic string `gorm:"kafka_topic;type:varchar;size:500;notNull"`
+	KafkaKey string `gorm:"kafka_key;type:varchar;size:500;notNull"`
+	KafkaValue string `gorm:"kafka_value;type:varchar;size:50000;notNull"`
 	KafkaHeaderKeys string `gorm:"kafka_header_keys;type:varchar;size:50000"`
 	KafkaHeaderValues string `gorm:"kafka_header_values;type:varchar;size:50000"`
 	CreatedAt time.Time `gorm:"created_at;notNull"`
 	DeliveredAt time.Time`gorm:"delivered_at"`
-	Status string `gorm:"status,type:varchar;size:100;index:status_index"`
+	Status string `gorm:"status,type:varchar;size:100;index:status_index;notNull"`
 }
 
 func initOutboxTable (DB *gorm.DB) error {
@@ -120,12 +120,15 @@ func StartProducer (config Config) error {
 					Value: []byte(message.Id),
 				})
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
-				producer.Produce(&kafka.Message{
+				err = producer.Produce(&kafka.Message{
 					TopicPartition: kafka.TopicPartition{Topic: &message.KafkaTopic, Partition: kafka.PartitionAny},
 					Value: []byte(message.KafkaValue),
 					Key: []byte(message.KafkaKey),
 					Headers: headers,
 				}, nil)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 
