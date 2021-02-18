@@ -53,7 +53,9 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.Port,
 		config.DatasourceConfig.SslMode)
 
-	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
+		PrepareStmt: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -86,7 +88,8 @@ func StartProducer (config Config) error {
 		for e := range producer.Events() {
 			switch ev := e.(type) {
 			case *kafka.Message:
-				fmt.Println(ev)
+				fmt.Println("Processed")
+				fmt.Println(ev.TopicPartition.Error)
 				var messageId string
 				for _,header := range ev.Headers {
 					if header.Key == "MESSAGE-ID" {
