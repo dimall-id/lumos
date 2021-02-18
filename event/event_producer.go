@@ -90,8 +90,9 @@ func StartProducer (config Config) error {
 			case *kafka.Message:
 				fmt.Println("Processed")
 				fmt.Println(ev.TopicPartition.Error)
-				fmt.Println(ev.Headers)
 				var messageId string
+				fmt.Println(string(ev.Value))
+				fmt.Println(messageId)
 				for _,header := range ev.Headers {
 					if header.Key == "MESSAGE-ID" {
 						messageId = string(header.Value)
