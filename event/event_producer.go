@@ -96,9 +96,7 @@ func StartProducer (config Config) error {
 				if err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println(data["id"])
-				messageId = string(data["id"])
-				fmt.Println(data["data"])
+				messageId = data["id"]
 				if ev.TopicPartition.Error != nil {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
 				} else {

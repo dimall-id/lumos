@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
@@ -24,7 +25,13 @@ func (n *NoCallbackRegisteredError) Error() string {
 	return "No callback registered"
 }
 
-type Callback func(message kafka.Message) error
+type ConsumerMessage struct {
+	Topic string
+	MessageId string
+	Headers []kafka.Header
+	Value string
+}
+type Callback func(message ConsumerMessage) error
 
 var callbacks = make(map[string]Callback)
 
@@ -43,6 +50,21 @@ func RemoveCallback (topic string) error {
 		return nil
 	}
 	return &NoExistingCallbackError{topic}
+}
+
+func GenerateConsumerMessage (message kafka.Message) (ConsumerMessage, error) {
+	var value map[string]string
+	err := json.Unmarshal(message.Value, &value)
+	if err != nil {
+		return ConsumerMessage{}, nil
+	}
+
+	return ConsumerMessage{
+		Topic: *message.TopicPartition.Topic,
+		MessageId: value["id"],
+		Headers: message.Headers,
+		Value: value["data"],
+	}, nil
 }
 
 func StartConsumer(config *kafka.ConfigMap) error {
@@ -68,7 +90,8 @@ func StartConsumer(config *kafka.ConfigMap) error {
 		case *kafka.Message:
 			topic := *e.TopicPartition.Topic
 			if callback, oke := callbacks[topic]; oke {
-				err = callback(*e)
+				message, err := GenerateConsumerMessage(*e)
+				err = callback(message)
 				if err == nil {
 					_, err = c.CommitMessage(e)
 					if err != nil {
