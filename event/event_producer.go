@@ -89,16 +89,16 @@ func StartProducer (config Config) error {
 			switch ev := e.(type) {
 			case *kafka.Message:
 				fmt.Println("Processed")
-				fmt.Println(ev.TopicPartition.Error)
+				fmt.Println(ev.Headers)
 				var messageId string
 				fmt.Println(string(ev.Value))
-				fmt.Println(messageId)
 				for _,header := range ev.Headers {
 					if header.Key == "MESSAGE-ID" {
 						messageId = string(header.Value)
 						break
 					}
 				}
+				fmt.Println(messageId)
 				if ev.TopicPartition.Error != nil {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
 				} else {
@@ -115,6 +115,7 @@ func StartProducer (config Config) error {
 			for _, message := range messages {
 				var keys = strings.Split(message.KafkaHeaderKeys, ",")
 				var values = strings.Split(message.KafkaHeaderValues, ",")
+				fmt.Println(len(keys))
 				var headers = make([]kafka.Header, len(keys))
 				for idx , key := range keys {
 					if idx < len(values) {
