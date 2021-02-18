@@ -3,6 +3,7 @@ package event
 import (
 	"database/sql"
 	"fmt"
+	"github.com/google/uuid"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -26,7 +27,7 @@ type DatasourceConfig struct {
 }
 
 type LumosOutbox struct {
-	Id uint `gorm:"id,primaryKey,autoIncrement"`
+	Id string `gorm:"id,primaryKey"`
 	KafkaTopic string `gorm:"kafka_topic,size:500"`
 	KafkaKey string `gorm:"kafka_key,size:500"`
 	KafkaValue string `gorm:"kafka_value,size:50000"`
@@ -108,12 +109,16 @@ func StartProducer (config Config) error {
 			for _, message := range messages {
 				var keys = strings.Split(message.KafkaHeaderKeys, ",")
 				var values = strings.Split(message.KafkaHeaderValues, ",")
-				var headers = make([]kafka.Header, 0)
+				var headers = make([]kafka.Header, len(keys))
 				for idx , key := range keys {
 					if idx < len(values) {
 						headers = append(headers, kafka.Header{Key: key, Value: []byte(values[idx])})
 					}
 				}
+				headers = append(headers, kafka.Header{
+					Key: "MESSAGE-ID",
+					Value: []byte(message.Id),
+				})
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
 				producer.Produce(&kafka.Message{
 					TopicPartition: kafka.TopicPartition{Topic: &message.KafkaTopic, Partition: kafka.PartitionAny},
@@ -155,6 +160,7 @@ func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 	}
 
 	data := LumosOutbox{
+		Id: uuid.New().String(),
 		KafkaTopic: message.Topic,
 		KafkaKey: message.Key,
 		KafkaValue: message.Value,
