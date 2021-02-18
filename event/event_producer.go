@@ -27,15 +27,15 @@ type DatasourceConfig struct {
 }
 
 type LumosOutbox struct {
-	Id string `gorm:"id,primaryKey"`
-	KafkaTopic string `gorm:"kafka_topic,size:500"`
-	KafkaKey string `gorm:"kafka_key,size:500"`
-	KafkaValue string `gorm:"kafka_value,size:50000"`
-	KafkaHeaderKeys string `gorm:"kafka_header_keys,size:50000"`
-	KafkaHeaderValues string `gorm:"kafka_header_values,size:50000"`
+	Id string `gorm:"id,primaryKey,varchar,size:50"`
+	KafkaTopic string `gorm:"kafka_topic,varchar,size:500"`
+	KafkaKey string `gorm:"kafka_key,varchar,size:500"`
+	KafkaValue string `gorm:"kafka_value,varchar,size:50000"`
+	KafkaHeaderKeys string `gorm:"kafka_header_keys,varchar,size:50000"`
+	KafkaHeaderValues string `gorm:"kafka_header_values,varchar,size:50000"`
 	CreatedAt time.Time `gorm:"created_at,notNull"`
 	DeliveredAt time.Time`gorm:"delivered_at"`
-	Status string `gorm:"status,100"`
+	Status string `gorm:"status,varchar,size:100"`
 }
 
 func initOutboxTable (DB *gorm.DB) error {
