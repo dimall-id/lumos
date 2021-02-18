@@ -8,7 +8,6 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 	"strings"
 	"time"
 )
@@ -40,99 +39,16 @@ type LumosOutbox struct {
 	Status string `gorm:"status,type:varchar;size:100;index:status_index;notNull"`
 }
 
+type LumosMessage struct {
+	Topic string
+	Key string
+	Value string
+	Headers map[string]string
+}
+
 func initOutboxTable (DB *gorm.DB) error {
 	err := DB.AutoMigrate(&LumosOutbox{})
 	return err
-}
-
-func StartProducer (config Config) error {
-	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
-		config.DatasourceConfig.Host,
-		config.DatasourceConfig.User,
-		config.DatasourceConfig.Password,
-		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port,
-		config.DatasourceConfig.SslMode)
-
-	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
-		PrepareStmt: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
-	if err != nil {
-		return err
-	}
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetMaxIdleConns(10)
-
-	defer sqlDB.Close()
-
-	err = initOutboxTable(db)
-	if err != nil {
-		return err
-	}
-
-	producer, err := kafka.NewProducer(&config.KafkaConfig)
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
-
-	/**
-	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
-	 */
-	go func() {
-		for e := range producer.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				var messageId string
-				var data map[string]string
-				err := json.Unmarshal(ev.Value, &data)
-				if err != nil {
-					log.Fatal(err)
-				}
-				messageId = data["id"]
-				if ev.TopicPartition.Error != nil {
-					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
-				} else {
-					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
-				}
-			}
-		}
-	}()
-
-	for {
-		var messages []LumosOutbox
-		db.Where("status = ?", "QUEUE").Find(&messages)
-		if len(messages) > 0 {
-			for _, message := range messages {
-				kMessage, err := GenerateKafkaMessage(message)
-				if err != nil {
-					return err
-				}
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
-				err = producer.Produce(&kMessage, nil)
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		var PoolDuration time.Duration = 60
-		if &config.PoolDuration != nil {
-			PoolDuration = config.PoolDuration
-		}
-		time.Sleep(PoolDuration)
-		/**
-		Clear the data for GC to collect
-		 */
-		messages = nil
-	}
 }
 
 func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
@@ -173,13 +89,6 @@ func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
 	}, nil
 }
 
-type LumosMessage struct {
-	Topic string
-	Key string
-	Value string
-	Headers map[string]string
-}
-
 func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 
 	var keys = make([]string, len(message.Headers))
@@ -205,4 +114,97 @@ func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 	tx := DB.Save(data)
 
 	return tx.Error
+}
+
+func StartProducer (config Config) error {
+	connString := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
+		config.DatasourceConfig.Host,
+		config.DatasourceConfig.User,
+		config.DatasourceConfig.Password,
+		config.DatasourceConfig.Database,
+		config.DatasourceConfig.Port,
+		config.DatasourceConfig.SslMode)
+
+	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
+		PrepareStmt: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	var sqlDB *sql.DB
+	sqlDB, err = db.DB()
+	if err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(10)
+
+	defer sqlDB.Close()
+
+	err = initOutboxTable(db)
+	if err != nil {
+		return err
+	}
+
+	producer, err := kafka.NewProducer(&config.KafkaConfig)
+	if err != nil {
+		return err
+	}
+	defer producer.Close()
+
+	errs := make(chan error)
+	if errs != nil {
+		return <- errs
+	}
+
+	/**
+	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
+	 */
+	go func() {
+		for e := range producer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				var messageId string
+				var data map[string]string
+				err := json.Unmarshal(ev.Value, &data)
+				errs <- err
+				messageId = data["id"]
+				if ev.TopicPartition.Error != nil {
+					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
+				} else {
+					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
+				}
+			}
+		}
+	}()
+
+	for {
+		var messages []LumosOutbox
+		db.Where("status = ?", "QUEUE").Find(&messages)
+		if len(messages) > 0 {
+			for _, message := range messages {
+				kMessage, err := GenerateKafkaMessage(message)
+				if err != nil {
+					return err
+				}
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
+				err = producer.Produce(&kMessage, nil)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		var PoolDuration time.Duration = 10
+		if &config.PoolDuration != nil {
+			PoolDuration = config.PoolDuration
+		}
+		time.Sleep(PoolDuration * time.Second)
+		/**
+		Clear the data for GC to collect
+		 */
+		messages = nil
+	}
 }

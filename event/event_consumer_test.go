@@ -1,12 +1,11 @@
 package event
 
 import (
-	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"testing"
 )
 
 func TestAddCallback(t *testing.T) {
-	err := AddCallback("COMMAND_EVENT", func(message kafka.Message) error {
+	err := AddCallback("COMMAND_EVENT", func(message ConsumerMessage) error {
 		return nil
 	})
 
@@ -14,7 +13,7 @@ func TestAddCallback(t *testing.T) {
 		t.Error("Fail to test, Add Callback return error")
 	}
 
-	err = AddCallback("COMMAND_EVENT", func(message kafka.Message) error {
+	err = AddCallback("COMMAND_EVENT", func(message ConsumerMessage) error {
 		return nil
 	})
 
@@ -37,3 +36,6 @@ func TestRemoveCallback(t *testing.T) {
 	}
 }
 
+func TestGenerateConsumerMessage(t *testing.T) {
+
+}
