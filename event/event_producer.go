@@ -2,11 +2,13 @@ package event
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 	"strings"
 	"time"
 )
@@ -88,17 +90,15 @@ func StartProducer (config Config) error {
 		for e := range producer.Events() {
 			switch ev := e.(type) {
 			case *kafka.Message:
-				fmt.Println("Processed")
-				fmt.Println(ev.Headers)
 				var messageId string
-				fmt.Println(string(ev.Value))
-				for _,header := range ev.Headers {
-					if header.Key == "MESSAGE-ID" {
-						messageId = string(header.Value)
-						break
-					}
+				var data map[string]string
+				err := json.Unmarshal(ev.Value, &data)
+				if err != nil {
+					log.Fatal(err)
 				}
-				fmt.Println(messageId)
+				fmt.Println(data["id"])
+				messageId = string(data["id"])
+				fmt.Println(data["data"])
 				if ev.TopicPartition.Error != nil {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
 				} else {
@@ -113,29 +113,14 @@ func StartProducer (config Config) error {
 		db.Where("status = ?", "QUEUE").Find(&messages)
 		if len(messages) > 0 {
 			for _, message := range messages {
-				var keys = strings.Split(message.KafkaHeaderKeys, ",")
-				var values = strings.Split(message.KafkaHeaderValues, ",")
-				fmt.Println(len(keys))
-				var headers = make([]kafka.Header, len(keys))
-				for idx , key := range keys {
-					if idx < len(values) {
-						headers = append(headers, kafka.Header{Key: key, Value: []byte(values[idx])})
-					}
-				}
-				headers = append(headers, kafka.Header{
-					Key: "MESSAGE-ID",
-					Value: []byte(message.Id),
-				})
-				fmt.Println(headers)
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
-				err = producer.Produce(&kafka.Message{
-					TopicPartition: kafka.TopicPartition{Topic: &message.KafkaTopic, Partition: kafka.PartitionAny},
-					Value: []byte(message.KafkaValue),
-					Key: []byte(message.KafkaKey),
-					Headers: headers,
-				}, nil)
+				kMessage, err := GenerateKafkaMessage(message)
 				if err != nil {
-					fmt.Println(err)
+					return err
+				}
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
+				err = producer.Produce(&kMessage, nil)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -150,6 +135,44 @@ func StartProducer (config Config) error {
 		 */
 		messages = nil
 	}
+}
+
+func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
+	var headers []kafka.Header
+	var keys []string
+	var values []string
+	if message.KafkaHeaderKeys != "" {
+		keys = strings.Split(message.KafkaHeaderKeys, ",")
+		values = strings.Split(message.KafkaHeaderValues, ",")
+		headers = make([]kafka.Header, len(keys))
+	} else {
+		keys = make([]string, 0)
+		values = make([]string, 0)
+		headers = make([]kafka.Header, 0)
+	}
+	for idx , key := range keys {
+		if idx < len(values) {
+			headers = append(headers, kafka.Header{Key: key, Value: []byte(values[idx])})
+		}
+	}
+
+	data := map[string]string {
+		"id" : message.Id,
+		"data" : message.KafkaValue,
+	}
+	j,e := json.Marshal(data)
+	if e != nil {
+		return kafka.Message{}, e
+	}
+	return kafka.Message{
+		TopicPartition: kafka.TopicPartition{
+			Topic: &message.KafkaTopic,
+			Partition: kafka.PartitionAny,
+		},
+		Headers: headers,
+		Key: []byte(message.KafkaKey),
+		Value: j,
+	}, nil
 }
 
 type LumosMessage struct {
