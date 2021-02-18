@@ -1,45 +1,51 @@
 package http
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 )
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/msgpack")
+		w.Header().Set("Content-Type", "application/json")
 		err := MethodNotAllow()
 		w.WriteHeader(err.Code)
-		res, _ := msgpack.Marshal(err)
-		w.Write(res)
+		res, _ := json.Marshal(err)
+		var dest bytes.Buffer
+		json.Compact(&dest, res)
+		w.Write(dest.Bytes())
 	})
 }
 
 func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/msgpack")
+		w.Header().Set("Content-Type", "application/json")
 		err := NotFound()
 		w.WriteHeader(err.Code)
-		res, _ := msgpack.Marshal(err)
-		w.Write(res)
+		res, _ := json.Marshal(err)
+		var dest bytes.Buffer
+		json.Compact(&dest, res)
+		w.Write(dest.Bytes())
 	})
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
-	w.Header().Set("Content-Type", "application/msgpack")
+	w.Header().Set("Content-Type", "application/json")
 	data, err := f(r)
 	var res []byte
+	var dest bytes.Buffer
 	if err.Message != "" {
 		w.WriteHeader(err.Code)
-		res, _ = msgpack.Marshal(err)
+		res, _ = json.Marshal(err)
+		json.Compact(&dest, res)
 	} else {
-		res, _ = msgpack.Marshal(data)
+		res, _ = json.Marshal(data)
+		json.Compact(&dest, res)
 	}
 
-	fmt.Println(res)
-	w.Write(res)
+	w.Write(dest.Bytes())
 }
 
 func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
