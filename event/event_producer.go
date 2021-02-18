@@ -86,6 +86,7 @@ func StartProducer (config Config) error {
 		for e := range producer.Events() {
 			switch ev := e.(type) {
 			case *kafka.Message:
+				fmt.Println(ev)
 				var messageId string
 				for _,header := range ev.Headers {
 					if header.Key == "MESSAGE-ID" {
