@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	"time"
 )
 
 var config = viper.New()
@@ -41,6 +42,18 @@ func GetIntSlice (key string) []int {
 	return config.GetIntSlice(key)
 }
 
+func GetUint (key string) uint {
+	return config.GetUint(key)
+}
+
+func GetUint32 (key string) uint32 {
+	return config.GetUint32(key)
+}
+
+func GetUint64 (key string) uint64 {
+	return config.GetUint64(key)
+}
+
 func GetString (key string) string {
 	return config.GetString(key)
 }
@@ -59,4 +72,12 @@ func GetStringMapString (key string) map[string]string {
 
 func GetStringMapStringSlice (key string) map[string][]string {
 	return config.GetStringMapStringSlice(key)
+}
+
+func GetDuration (key string) time.Duration {
+	return config.GetDuration(key)
+}
+
+func GetFloat64 (key string) float64 {
+	return config.GetFloat64(key)
 }
