@@ -125,6 +125,7 @@ func StartProducer (config Config) error {
 					Key: "MESSAGE-ID",
 					Value: []byte(message.Id),
 				})
+				fmt.Println(headers)
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
 				err = producer.Produce(&kafka.Message{
 					TopicPartition: kafka.TopicPartition{Topic: &message.KafkaTopic, Partition: kafka.PartitionAny},
