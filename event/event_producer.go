@@ -127,7 +127,7 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.Port,
 		config.DatasourceConfig.SslMode)
 
-	fmt.Println("Starting DB Connection");
+	fmt.Printf("[%s] Starting DB Connection\n", time.Now().Format(time.RFC850))
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
 		PrepareStmt: true,
 	})
@@ -145,27 +145,27 @@ func StartProducer (config Config) error {
 
 	defer sqlDB.Close()
 
-	fmt.Println("Migrating Outbox Table")
+	fmt.Printf("[%s] Migrating Outbox Table\n", time.Now().Format(time.RFC850))
 	err = initOutboxTable(db)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Done Migrating Outbox Table")
+	fmt.Printf("[%s] Done Migrating Outbox Table\n", time.Now().Format(time.RFC850))
 
-	fmt.Println("Starting Kafka Producer")
+	fmt.Printf("[%s] Starting Kafka Producer\n", time.Now().Format(time.RFC850))
 	producer, err := kafka.NewProducer(&config.KafkaConfig)
 	if err != nil {
 		return err
 	}
 	defer producer.Close()
-	fmt.Println("Done Kafka Producer")
+	fmt.Printf("[%s] Done Kafka Producer", time.Now().Format(time.RFC850))
 
 	/**
 	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
 	 */
 	go func() {
 		for e := range producer.Events() {
-			fmt.Println("Getting New Producer Event")
+			fmt.Printf("[%s] Getting New Producer Event\n", time.Now().Format(time.RFC850))
 			switch ev := e.(type) {
 			case *kafka.Message:
 				var messageId string
@@ -181,15 +181,15 @@ func StartProducer (config Config) error {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
 				}
 			}
-			fmt.Print("Done Processing Producer Event")
+			fmt.Printf("[%s] Done Processing Producer Event\n", time.Now().Format(time.RFC850))
 		}
 	}()
 
 	var messages []LumosOutbox
 	for {
-		fmt.Printf("Fetching Messaging ...")
+		fmt.Printf("[%s] Fetching Messaging ... \n", time.Now().Format(time.RFC850))
 		db.Where("status = ?", "QUEUE").Find(&messages)
-		fmt.Printf("Processing %d amount of message \n", len(messages))
+		fmt.Printf("[%s] Processing %d amount of message \n", time.Now().Format(time.RFC850), len(messages))
 		if len(messages) > 0 {
 			for _, message := range messages {
 				kMessage, err := GenerateKafkaMessage(message)
@@ -208,7 +208,7 @@ func StartProducer (config Config) error {
 		if &config.PoolDuration != nil {
 			PoolDuration = config.PoolDuration
 		}
-		fmt.Printf("Sleep for %d", PoolDuration * time.Second)
+		fmt.Printf("[%s] Sleep for %d \n", time.Now().Format(time.RFC850), PoolDuration * time.Second)
 		time.Sleep(PoolDuration * time.Second)
 		/**
 		Clear the data for GC to collect
