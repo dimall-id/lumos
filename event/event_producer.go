@@ -159,12 +159,11 @@ func StartProducer (config Config) error {
 	defer producer.Close()
 	fmt.Println("Done Kafka Producer")
 
-	errs := make(chan error)
-	if errs != nil {
-		fmt.Println("Get Error from chan")
-		return <- errs
+	errs := make(chan error, 0)
+	select {
+	case err := <- errs:
+		return err
 	}
-
 	/**
 	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
 	 */
