@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"github.com/dimall-id/jwt-go"
@@ -54,9 +55,11 @@ func CheckAuthentication (r *http.Request, rr Route) HttpError {
 		} else {
 			token, err := jwt.Parse(r.Header.Get("Authentication"), nil)
 			if err != nil {
+				fmt.Println(err)
 				return BadRequest()
 			}
 			claims, _ := token.Claims.(jwt.MapClaims)
+			fmt.Println(claims)
 			if claim, oke := claims["Roles"] ; oke {
 				if !CheckRole(claim.([]string), rr.Roles) {
 					return Unauthorized()
