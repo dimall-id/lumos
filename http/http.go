@@ -55,6 +55,7 @@ func CheckAuthentication (authentication string, rr Route) HttpError {
 			return Unauthorized()
 		} else {
 			t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
+			fmt.Println(t["token"])
 			token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
 			if err != nil {
 				fmt.Println(err)
