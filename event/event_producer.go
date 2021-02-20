@@ -126,6 +126,7 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.Port,
 		config.DatasourceConfig.SslMode)
 
+	fmt.Println("Starting DB Connection");
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
 		PrepareStmt: true,
 	})
@@ -143,16 +144,20 @@ func StartProducer (config Config) error {
 
 	defer sqlDB.Close()
 
+	fmt.Println("Migrating Outbox Table")
 	err = initOutboxTable(db)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Done Migrating Outbox Table")
 
+	fmt.Println("Starting Kafka Producer")
 	producer, err := kafka.NewProducer(&config.KafkaConfig)
 	if err != nil {
 		return err
 	}
 	defer producer.Close()
+	fmt.Println("Done Kafka Producer")
 
 	errs := make(chan error)
 	if errs != nil {
@@ -164,6 +169,7 @@ func StartProducer (config Config) error {
 	 */
 	go func() {
 		for e := range producer.Events() {
+			fmt.Println("Getting New Producer Event")
 			switch ev := e.(type) {
 			case *kafka.Message:
 				var messageId string
@@ -177,11 +183,13 @@ func StartProducer (config Config) error {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
 				}
 			}
+			fmt.Print("Done Processing Producer Event")
 		}
 	}()
 
+	var messages []LumosOutbox
 	for {
-		var messages []LumosOutbox
+		fmt.Printf("Fetching Messaging ...")
 		db.Where("status = ?", "QUEUE").Find(&messages)
 		fmt.Printf("Processing %d amount of message \n", len(messages))
 		if len(messages) > 0 {
@@ -202,6 +210,7 @@ func StartProducer (config Config) error {
 		if &config.PoolDuration != nil {
 			PoolDuration = config.PoolDuration
 		}
+		fmt.Printf("Sleep for %d", PoolDuration * time.Second)
 		time.Sleep(PoolDuration * time.Second)
 		/**
 		Clear the data for GC to collect
