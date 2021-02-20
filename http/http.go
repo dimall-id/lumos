@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
+	"github.com/dimall-id/jwt-go"
 )
 
 func methodNotAllowedHandler() http.Handler {
@@ -31,21 +32,64 @@ func notFoundHandler() http.Handler {
 	})
 }
 
-func HandleRequest(w http.ResponseWriter, r *http.Request, f func(r2 *http.Request) (interface{}, HttpError)) {
-	w.Header().Set("Content-Type", "application/json")
-	data, err := f(r)
-	var res []byte
-	var dest bytes.Buffer
-	if err.Message != "" {
-		w.WriteHeader(err.Code)
-		res, _ = json.Marshal(err)
-		json.Compact(&dest, res)
-	} else {
-		res, _ = json.Marshal(data)
-		json.Compact(&dest, res)
+func CheckRole (roles []string, routes []string) bool {
+	route := make(map[string]string)
+	for _,d := range routes {
+		route[d] = d
 	}
+	for _, role := range roles {
+		if _, oke := route[role]; oke {
+			return true
+		}
+	}
+	return false
+}
 
-	w.Write(dest.Bytes())
+func CheckAuthentication (r *http.Request, rr Route) HttpError {
+	if len(rr.Roles) <= 0 {
+		return HttpError{}
+	} else {
+		if r.Header.Get("Authentication") == "" {
+			return Unauthorized()
+		} else {
+			token, err := jwt.Parse(r.Header.Get("Authentication"), nil)
+			if err != nil {
+				return BadRequest()
+			}
+			claims, _ := token.Claims.(jwt.MapClaims)
+			if claim, oke := claims["Roles"] ; oke {
+				if !CheckRole(claim.([]string), rr.Roles) {
+					return Unauthorized()
+				}
+			} else {
+				return BadRequest()
+			}
+		}
+	}
+	return HttpError{}
+}
+
+func BuildJsonResponse (response interface{}) []byte {
+	res, _ := json.Marshal(response)
+	var dest bytes.Buffer
+	json.Compact(&dest, res)
+	return dest.Bytes()
+}
+
+func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
+	var res []byte
+	err := CheckAuthentication(r, rr)
+	if err.Message != "" {
+		res = BuildJsonResponse(err)
+	} else {
+		data, err := rr.Func(r)
+		if err.Message != "" {
+			res = BuildJsonResponse(err)
+		} else {
+			res = BuildJsonResponse(data)
+		}
+	}
+	w.Write(res)
 }
 
 func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
@@ -56,7 +100,7 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	for i, _ := range routes {
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
-			HandleRequest(w, r, rr.Func)
+			HandleRequest(w, r, rr)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
