@@ -34,13 +34,13 @@ func notFoundHandler() http.Handler {
 	})
 }
 
-func CheckRole (roles []string, routes []string) bool {
+func CheckRole (roles []interface{}, routes []string) bool {
 	route := make(map[string]string)
 	for _,d := range routes {
 		route[d] = d
 	}
 	for _, role := range roles {
-		if _, oke := route[role]; oke {
+		if _, oke := route[fmt.Sprintf("%v", role)]; oke {
 			return true
 		}
 	}
@@ -64,7 +64,7 @@ func CheckAuthentication (authentication string, rr Route) HttpError {
 			claims, _ := token.Claims.(jwt.MapClaims)
 			fmt.Println(claims)
 			if claim, oke := claims["Roles"] ; oke {
-				if !CheckRole(claim.([]string), rr.Roles) {
+				if !CheckRole(claim.([]interface{}), rr.Roles) {
 					return Unauthorized()
 				}
 			} else {
