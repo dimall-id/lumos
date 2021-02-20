@@ -183,6 +183,7 @@ func StartProducer (config Config) error {
 	for {
 		var messages []LumosOutbox
 		db.Where("status = ?", "QUEUE").Find(&messages)
+		fmt.Printf("Processing %d amount of message \n", len(messages))
 		if len(messages) > 0 {
 			for _, message := range messages {
 				kMessage, err := GenerateKafkaMessage(message)
