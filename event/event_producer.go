@@ -8,6 +8,7 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 	"strings"
 	"time"
 )
@@ -159,11 +160,6 @@ func StartProducer (config Config) error {
 	defer producer.Close()
 	fmt.Println("Done Kafka Producer")
 
-	errs := make(chan error, 0)
-	select {
-	case err := <- errs:
-		return err
-	}
 	/**
 	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
 	 */
@@ -175,7 +171,9 @@ func StartProducer (config Config) error {
 				var messageId string
 				var data map[string]string
 				err := json.Unmarshal(ev.Value, &data)
-				errs <- err
+				if err != nil {
+					log.Fatal(err)
+				}
 				messageId = data["id"]
 				if ev.TopicPartition.Error != nil {
 					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
