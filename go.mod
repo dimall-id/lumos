@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.5.2 // indirect
-	github.com/dimall-id/jwt-go v1.0.0
+	github.com/dimall-id/jwt-go v1.0.1
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.9.0 // indirect

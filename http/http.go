@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dimall-id/lumos/misc"
 	"github.com/gorilla/mux"
 	"net/http"
 	"github.com/dimall-id/jwt-go"
@@ -46,14 +47,15 @@ func CheckRole (roles []string, routes []string) bool {
 	return false
 }
 
-func CheckAuthentication (r *http.Request, rr Route) HttpError {
+func CheckAuthentication (authentication string, rr Route) HttpError {
 	if len(rr.Roles) <= 0 {
 		return HttpError{}
 	} else {
-		if r.Header.Get("Authentication") == "" {
+		if authentication == "" {
 			return Unauthorized()
 		} else {
-			token, err := jwt.Parse(r.Header.Get("Authentication"), nil)
+			t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
+			token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
 			if err != nil {
 				fmt.Println(err)
 				return BadRequest()
@@ -81,7 +83,7 @@ func BuildJsonResponse (response interface{}) []byte {
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	var res []byte
-	err := CheckAuthentication(r, rr)
+	err := CheckAuthentication(r.Header.Get("Authentication"), rr)
 	if err.Message != "" {
 		res = BuildJsonResponse(err)
 	} else {
