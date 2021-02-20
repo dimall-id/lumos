@@ -47,7 +47,7 @@ func CheckRole (roles []interface{}, routes []string) bool {
 	return false
 }
 
-func CheckAuthentication (authentication string, rr Route) HttpError {
+func CheckAuthorization(authentication string, rr Route) HttpError {
 	if len(rr.Roles) <= 0 {
 		return HttpError{}
 	} else {
@@ -55,14 +55,11 @@ func CheckAuthentication (authentication string, rr Route) HttpError {
 			return Unauthorized()
 		} else {
 			t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-			fmt.Println(t["token"])
 			token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
 			if err != nil {
-				fmt.Println(err)
 				return BadRequest()
 			}
 			claims, _ := token.Claims.(jwt.MapClaims)
-			fmt.Println(claims)
 			if claim, oke := claims["Roles"] ; oke {
 				if !CheckRole(claim.([]interface{}), rr.Roles) {
 					return Unauthorized()
@@ -84,7 +81,7 @@ func BuildJsonResponse (response interface{}) []byte {
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	var res []byte
-	err := CheckAuthentication(r.Header.Get("Authentication"), rr)
+	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
 	if err.Message != "" {
 		res = BuildJsonResponse(err)
 	} else {
