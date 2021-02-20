@@ -161,6 +161,7 @@ func StartProducer (config Config) error {
 
 	errs := make(chan error)
 	if errs != nil {
+		fmt.Println("Get Error from chan")
 		return <- errs
 	}
 
