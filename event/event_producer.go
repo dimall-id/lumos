@@ -158,7 +158,7 @@ func StartProducer (config Config) error {
 		return err
 	}
 	defer producer.Close()
-	fmt.Printf("[%s] Done Kafka Producer", time.Now().Format(time.RFC850))
+	fmt.Printf("[%s] Done Kafka Producer\n", time.Now().Format(time.RFC850))
 
 	/**
 	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
