@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	url2 "net/url"
 	"strings"
 )
 
@@ -18,10 +17,6 @@ func (r *Route) IsValid() bool {
 	hm := "GETPOSTPUTPATCHDELETEOPTIONS"
 	if !strings.Contains(hm, r.HttpMethod) {
 		return false
-	}
-	_, err := url2.Parse(r.Url)
- 	if err != nil {
- 		return false
 	}
 	if r.Name == "" || r.HttpMethod == "" || r.Url == "" || r.Func == nil {
 		return false
