@@ -85,6 +85,18 @@ func TestRoute_IsValid(t *testing.T) {
 			},
 			expect: true,
 		},
+		{
+			route: Route{
+				Name: "Product List",
+				HttpMethod: "POST",
+				Url: "/products",
+				Func: func(r *http.Request) (interface{}, HttpError) {
+					return nil, HttpError{}
+				},
+				Roles: []string{},
+			},
+			expect: true,
+		},
 	}
 
 	for i, test := range routes {

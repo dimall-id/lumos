@@ -21,7 +21,7 @@ func (r *Route) IsValid() bool {
 	if r.Name == "" || r.HttpMethod == "" || r.Url == "" || r.Func == nil {
 		return false
 	}
-	if len(r.Roles) <= 0 {
+	if r.Roles == nil {
 		return false
 	}
 	return true
