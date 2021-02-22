@@ -50,6 +50,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/dimall-id/jwt-go v1.0.0 h1:mmaTqj31OhAH5AwfLbDc9WGsPL+j+jMBBdBlPQsYGWY=
 github.com/dimall-id/jwt-go v1.0.0/go.mod h1:rR5h8PC9MDJd/AgrM403S47q9txTfv9Kvf8ZQ0gfiRM=
+github.com/dimall-id/jwt-go v1.0.1 h1:QcFjxm+ihj1YTkTyT/jJx6K2hSR0KHB+FE22xKCH77A=
+github.com/dimall-id/jwt-go v1.0.1/go.mod h1:rR5h8PC9MDJd/AgrM403S47q9txTfv9Kvf8ZQ0gfiRM=
 github.com/dimall-id/jwt-go v1.0.2 h1:DQSbFIhjGRrle4pS5Sxi8zyPgR3/aNW1LhEO2xKzuYo=
 github.com/dimall-id/jwt-go v3.2.0+incompatible h1:u3obadod8QKeSqKrXKlsuxzAH6ND6JScf7oaHNio0EM=
 github.com/dimall-id/jwt-go v3.2.0+incompatible/go.mod h1:yaDl7zZ8yy8ck1Ohc1XxgGpz5ZHOyVBcf9ofTinQ/yo=

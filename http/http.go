@@ -12,7 +12,7 @@ import (
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/datatype")
 		err := MethodNotAllow()
 		w.WriteHeader(err.Code)
 		res, _ := json.Marshal(err)
@@ -24,7 +24,7 @@ func methodNotAllowedHandler() http.Handler {
 
 func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/datatype")
 		err := NotFound()
 		w.WriteHeader(err.Code)
 		res, _ := json.Marshal(err)
