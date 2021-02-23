@@ -7,15 +7,15 @@ import (
 )
 
 type HttpResponse struct {
-	TotalRecord int `datatype:"total_record,omitempty" msgpack:"total_record,omitempty"`
-	TotalPage int `datatype:"total_page,omitempty" msgpack:"total_page,omitempty"`
-	Page int `datatype:"page,omitempty" msgpack:"page,omitempty"`
-	PerPage int `datatype:"per_page,omitempty" msgpack:"per_page,omitempty"`
-	PrevPage int `datatype:"prev_page,omitempty" msgpack:"prev_page,omitempty"`
-	NextPage int `datatype:"next_page,omitempty" msgpack:"next_page,omitempty"`
-	FirstPage int `datatype:"first_page,omitempty" msgpack:"first_page,omitempty"`
-	LastPage int `datatype:"last_page,omitempty" msgpack:"last_page,omitempty"`
-	Records interface{} `datatype:"records" msgpack:"records,as_array"`
+	TotalRecord int `json:"total_record,omitempty" msgpack:"total_record,omitempty"`
+	TotalPage int `json:"total_page,omitempty" msgpack:"total_page,omitempty"`
+	Page int `json:"page,omitempty" msgpack:"page,omitempty"`
+	PerPage int `json:"per_page,omitempty" msgpack:"per_page,omitempty"`
+	PrevPage int `json:"prev_page,omitempty" msgpack:"prev_page,omitempty"`
+	NextPage int `json:"next_page,omitempty" msgpack:"next_page,omitempty"`
+	FirstPage int `json:"first_page,omitempty" msgpack:"first_page,omitempty"`
+	LastPage int `json:"last_page,omitempty" msgpack:"last_page,omitempty"`
+	Records interface{} `json:"records" msgpack:"records,as_array"`
 }
 
 type Param struct {
