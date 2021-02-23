@@ -208,7 +208,7 @@ func StartProducer (config Config) error {
 		if &config.PoolDuration != nil {
 			PoolDuration = config.PoolDuration
 		}
-		fmt.Printf("[%s] Sleep for %d \n", time.Now().Format(time.RFC850), PoolDuration * time.Second)
+		fmt.Printf("[%s] Sleep for %d Seconds\n", time.Now().Format(time.RFC850), PoolDuration)
 		time.Sleep(PoolDuration * time.Second)
 		/**
 		Clear the data for GC to collect

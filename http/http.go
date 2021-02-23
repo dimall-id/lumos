@@ -86,6 +86,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	} else {
 		data, err := rr.Func(r)
 		if err.Message != "" {
+			w.WriteHeader(err.Code)
 			res = BuildJsonResponse(err)
 		} else {
 			res = BuildJsonResponse(data)
