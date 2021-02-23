@@ -33,7 +33,10 @@ func notFoundHandler() http.Handler {
 }
 
 func CheckRole (roles []interface{}, routes []string) bool {
-	route := make(map[string]string)
+	if len(routes) <= 0 {
+		return true
+	}
+ 	route := make(map[string]string)
 	for _,d := range routes {
 		route[d] = d
 	}
@@ -46,25 +49,21 @@ func CheckRole (roles []interface{}, routes []string) bool {
 }
 
 func CheckAuthorization(authentication string, rr Route) HttpError {
-	if len(rr.Roles) <= 0 {
-		return HttpError{}
+	if authentication == "" && !CheckRole([]interface{}{"ANONYMOUS"}, rr.Roles) {
+		return Unauthorized()
 	} else {
-		if authentication == "" {
-			return Unauthorized()
+		t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
+		token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
+		if err != nil {
+			return BadRequest()
+		}
+		claims, _ := token.Claims.(jwt.MapClaims)
+		if claim, oke := claims["Roles"] ; oke {
+			if !CheckRole(claim.([]interface{}), rr.Roles) {
+				return Unauthorized()
+			}
 		} else {
-			t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-			token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
-			if err != nil {
-				return BadRequest()
-			}
-			claims, _ := token.Claims.(jwt.MapClaims)
-			if claim, oke := claims["Roles"] ; oke {
-				if !CheckRole(claim.([]interface{}), rr.Roles) {
-					return Unauthorized()
-				}
-			} else {
-				return BadRequest()
-			}
+			return BadRequest()
 		}
 	}
 	return HttpError{}
