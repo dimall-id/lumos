@@ -49,8 +49,10 @@ func CheckRole (roles []interface{}, routes []string) bool {
 }
 
 func CheckAuthorization(authentication string, rr Route) HttpError {
-	if authentication == "" && !CheckRole([]interface{}{"ANONYMOUS"}, rr.Roles) {
-		return Unauthorized()
+	if authentication == "" {
+		if !CheckRole([]interface{}{"ANONYMOUS"}, rr.Roles) {
+			return Unauthorized()
+		}
 	} else {
 		t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
 		token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
