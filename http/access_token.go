@@ -5,6 +5,7 @@ type AccessToken struct {
 	Exp string `json:"exp"`
 	Jti string `json:"jti"`
 	UserId string `json:"user_id"`
+	RefId string `json:"ref_id"`
 	UserName string `json:"user_name"`
 	UserType string `json:"user_type"`
 	Roles []string `json:"roles"`
@@ -22,6 +23,9 @@ func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
 	}
 	if val,oke := data["user_id"];oke {
 		a.UserId = val.(string)
+	}
+	if val,oke := data["ref_id"];oke {
+		a.RefId = val.(string)
 	}
 	if val,oke := data["user_name"];oke {
 		a.UserName = val.(string)
