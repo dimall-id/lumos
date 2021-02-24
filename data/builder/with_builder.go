@@ -26,7 +26,7 @@ func (wb *WithBuilder) ApplyQuery (db *gorm.DB, field string, condition string) 
 	relations := strings.Split(cond["condition"], ",")
 	tx := db
 	for _, relation := range relations {
-		tx = db.Preload(relation)
+		tx = tx.Preload(relation)
 	}
 	return tx
 }
