@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	WithPattern = "\\[(?P<type>with);(?P<condition>[a-zA-Z,]+)\\]"
+	WithPattern = "\\[(?P<type>with);(?P<condition>[a-zA-Z,.]+)\\]"
 )
 
 type WithBuilder struct {}
