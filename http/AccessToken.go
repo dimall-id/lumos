@@ -2,7 +2,7 @@ package http
 
 type AccessToken struct {
 	Iss string `json:"iss"`
-	Exp int64 `json:"exp"`
+	Exp string `json:"exp"`
 	Jti string `json:"jti"`
 	UserId string `json:"user_id"`
 	UserName string `json:"user_name"`
@@ -15,7 +15,7 @@ func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
 		a.Iss = val.(string)
 	}
 	if val, oke := data["exp"];oke {
-		a.Exp = val.(int64)
+		a.Exp = val.(string)
 	}
 	if val, oke := data["jti"];oke {
 		a.Jti = val.(string)
