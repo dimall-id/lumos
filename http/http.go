@@ -54,12 +54,10 @@ func CheckAuthorization(authentication string, rr Route) HttpError {
 			return Unauthorized()
 		}
 	} else {
-		t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-		token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
+		claims, err := GetTokenClaim(authentication)
 		if err != nil {
 			return BadRequest()
 		}
-		claims, _ := token.Claims.(jwt.MapClaims)
 		if claim, oke := claims["Roles"] ; oke {
 			if !CheckRole(claim.([]interface{}), rr.Roles) {
 				return Unauthorized()
@@ -69,6 +67,16 @@ func CheckAuthorization(authentication string, rr Route) HttpError {
 		}
 	}
 	return HttpError{}
+}
+
+func GetTokenClaim (authentication string) (map[string]interface{}, error) {
+	t := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
+	token, err := jwt.ParseUnverified(t["token"], jwt.MapClaims{})
+	if err != nil {
+		return nil, err
+	}
+	claims, _ := token.Claims.(jwt.MapClaims)
+	return claims, nil
 }
 
 func BuildJsonResponse (response interface{}) []byte {
@@ -108,6 +116,7 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	}
 
 	r.Use(ContentTypeMiddleware)
+	r.Use(JwtTokenMiddleware)
 	for _, mwr := range middleware {
 		mw := mwr
 		r.Use(mw)
