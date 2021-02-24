@@ -5,7 +5,6 @@ import (
 	"github.com/dimall-id/lumos/data/builder"
 	"github.com/dimall-id/lumos/misc"
 	"gorm.io/gorm"
-	"net/http"
 	"regexp"
 	"strconv"
 )
@@ -109,7 +108,6 @@ func (q *Query) BuildResponse (queries map[string]string, result interface{}) bu
 				Page: int(page),
 				PerPage: int(perPage),
 				ShowSQL: true,
-				Path: r.URL.Path,
 			}, result)
 		}
 	}

@@ -22,7 +22,6 @@ type Param struct {
 	DB *gorm.DB
 	Page int
 	PerPage int
-	Path string
 	ShowSQL bool
 }
 
