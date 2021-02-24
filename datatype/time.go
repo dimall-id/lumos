@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
-type Time time.Time
+type Time sql.NullTime
 
 func (t *Time) Scan(value interface{}) (err error) {
-	nullTime := &sql.NullTime{}
+	nullTime := sql.NullTime{}
 	err = nullTime.Scan(value)
-	*t = Time(nullTime.Time)
+	*t = Time(nullTime)
 	return
 }
 
 func (t Time) Value() (driver.Value, error) {
-	y, m, d := time.Time(t).Date()
-	h,M,s := time.Time(t).Clock()
-	return time.Date(y, m, d, h, M, s, 0, time.Time(t).Location()), nil
+	y, m, d := t.Time.Date()
+	h,M,s := t.Time.Clock()
+	return time.Date(y, m, d, h, M, s, 0, t.Time.Location()), nil
 }
 
 // GormDataType gorm common data type
@@ -29,11 +29,11 @@ func (t Time) GormDataType() string {
 }
 
 func (t Time) GobEncode() ([]byte, error) {
-	return time.Time(t).GobEncode()
+	return t.Time.GobEncode()
 }
 
 func (t *Time) GobDecode(b []byte) error {
-	return (*time.Time)(t).GobDecode(b)
+	return t.Time.GobDecode(b)
 }
 
 func (t *Time) UnmarshalJSON(b []byte) (err error) {
@@ -43,11 +43,13 @@ func (t *Time) UnmarshalJSON(b []byte) (err error) {
 		return err
 	}
 	tx := time.Unix(i, 0)
-	*t = Time(tx)
+	nullTime := sql.NullTime{}
+	err = nullTime.Scan(tx)
+	*t = Time(nullTime)
 	return
 }
 
 func (t Time) MarshalJSON() ([]byte, error) {
-	tx := time.Time(t)
+	tx := t.Time
 	return []byte(strconv.FormatInt(tx.Unix(), 10)), nil
 }
