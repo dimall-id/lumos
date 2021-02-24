@@ -30,6 +30,10 @@ func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
 		a.UserType = val.(string)
 	}
 	if val,oke := data["roles"];oke {
-		a.Roles = val.([]string)
+		roles := make([]string, len(val.([]interface{})))
+		for i, role := range data["roles"].([]interface{}) {
+			roles[i] = role.(string)
+		}
+		a.Roles = roles
 	}
 }
