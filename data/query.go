@@ -91,7 +91,7 @@ func (q *Query) Query (queries string) map[string]string {
 	return results
 }
 
-func (q *Query) BuildResponse (queries map[string][string], result interface{}) builder.HttpResponse {
+func (q *Query) BuildResponse (queries map[string]string, result interface{}) builder.HttpResponse {
 	for field, condition := range queries {
 		b := q.GetBuilder(condition)
 		if b != nil {
