@@ -75,7 +75,7 @@ func (q *Query) GetBuilder (value string) QueryBuilder {
 }
 
 func (q *Query) Query (queries string) map[string]string {
-	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%]+))+`)
+	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%.]+))+`)
 	exps := r.FindAllStringSubmatch(queries, -1)
 	var results = make(map[string]string)
 	var keys = make(map[string]int)
