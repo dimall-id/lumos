@@ -118,6 +118,7 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 		Addr : kafka.TCP(config.Host),
 		Topic: topic,
 		Balancer: kafka.CRC32Balancer{},
+
 	}
 
 	err := w.WriteMessages(context.Background(), message)

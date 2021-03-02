@@ -79,45 +79,77 @@ func NewConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
 		ConsumerGroupId: ConsumerGroupId,
 	}
 }
-func newKafkaReadConfig(config ConsumerConfig, topic string) kafka.ReaderConfig {
+func newKafkaConsumerGroupConfig (config ConsumerConfig, topics []string) kafka.ConsumerGroupConfig {
+	return kafka.ConsumerGroupConfig{
+		Brokers: config.Brokers,
+		ID: config.ConsumerGroupId,
+		Topics: topics,
+	}
+}
+func newKafkaReadConfig(config ConsumerConfig, topic string, partition int) kafka.ReaderConfig {
 	c := kafka.ReaderConfig{
 		Brokers: config.Brokers,
 		GroupID: config.ConsumerGroupId,
 		Topic: topic,
+		Partition: partition,
 	}
 	return c
-}
-
-func StartConsumer(topic string, callback Callback, config ConsumerConfig) error {
-	errs := make(chan error, 1)
-	go func() {
-		r := kafka.NewReader(newKafkaReadConfig(config, topic))
-		defer r.Close()
-		for {
-			m, err := r.FetchMessage(context.Background())
-			if err != nil {
-				errs <- err
-			}
-			message, err := GenerateConsumerMessage(m)
-			err = callback(message)
-			if err == nil {
-				if err := r.CommitMessages(context.Background(), m); err != nil {
-					errs <- err
-				}
-			}
-		}
-	}()
-	return <-errs
 }
 
 func StartConsumers (config ConsumerConfig) error {
 	if len(callbacks) == 0 {return &NoCallbackRegisteredError{}}
 
-	for topic, callback := range callbacks {
-		err := StartConsumer(topic, callback, config)
+	topics := make([]string, len(callbacks))
+	i := 0
+	for topic, _ := range callbacks {
+		topics[i] = topic
+		i ++
+	}
+
+	group, err := kafka.NewConsumerGroup(newKafkaConsumerGroupConfig(config, topics))
+	if err != nil {return err}
+	defer group.Close()
+
+	for {
+		gen, err := group.Next(context.TODO())
 		if err != nil {
 			return err
 		}
+
+		for topic, callback := range callbacks {
+			assignments := gen.Assignments[topic]
+			for _, assignment := range assignments {
+				partition, offset := assignment.ID, assignment.Offset
+				gen.Start(func (ctx context.Context) {
+					reader := kafka.NewReader(newKafkaReadConfig(config, topic, partition))
+					defer reader.Close()
+
+					reader.SetOffset(offset)
+					for {
+						msg, err := reader.FetchMessage(context.Background())
+						switch err {
+						case kafka.ErrGenerationEnded:
+							// generation has ended.  commit offsets.  in a real app,
+							// offsets would be committed periodically.
+							gen.CommitOffsets(map[string]map[int]int64{"my-topic": {partition: offset + 1}})
+							return
+						case nil:
+							message, err := GenerateConsumerMessage(msg)
+							err = callback(message)
+							if err == nil {
+								if err := reader.CommitMessages(context.Background(), msg); err != nil {
+									fmt.Printf("Fail to commit message : %+v\n", err)
+								}
+							}
+							offset = msg.Offset
+						default:
+							fmt.Printf("error reading message: %+v\n", err)
+						}
+
+					}
+				})
+			}
+		}
 	}
-	return nil
 }
+
