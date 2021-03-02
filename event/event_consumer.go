@@ -72,7 +72,7 @@ type ConsumerConfig struct {
 	ConsumerGroupId  string
 	Brokers []string
 }
-func newConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
+func NewConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
 	Brokers := strings.Split(Broker, ",")
 	return ConsumerConfig{
 		Brokers: Brokers,
