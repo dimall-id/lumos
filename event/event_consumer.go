@@ -89,7 +89,6 @@ func newKafkaConsumerGroupConfig (config ConsumerConfig, topics []string) kafka.
 func newKafkaReadConfig(config ConsumerConfig, topic string, partition int) kafka.ReaderConfig {
 	c := kafka.ReaderConfig{
 		Brokers: config.Brokers,
-		GroupID: config.ConsumerGroupId,
 		Topic: topic,
 		Partition: partition,
 	}
