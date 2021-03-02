@@ -1,9 +1,11 @@
 package event
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
+	"strings"
 )
 
 type ExistingCallbackError struct {
@@ -31,6 +33,20 @@ type ConsumerMessage struct {
 	Headers []kafka.Header
 	Value string
 }
+func GenerateConsumerMessage (message kafka.Message) (ConsumerMessage, error) {
+	var value map[string]string
+	err := json.Unmarshal(message.Value, &value)
+	if err != nil {
+		return ConsumerMessage{}, nil
+	}
+
+	return ConsumerMessage{
+		Topic: message.Topic,
+		MessageId: value["id"],
+		Headers: message.Headers,
+		Value: value["data"],
+	}, nil
+}
 type Callback func(message ConsumerMessage) error
 
 var callbacks = make(map[string]Callback)
@@ -52,60 +68,56 @@ func RemoveCallback (topic string) error {
 	return &NoExistingCallbackError{topic}
 }
 
-func GenerateConsumerMessage (message kafka.Message) (ConsumerMessage, error) {
-	var value map[string]string
-	err := json.Unmarshal(message.Value, &value)
-	if err != nil {
-		return ConsumerMessage{}, nil
+type ConsumerConfig struct {
+	ConsumerGroupId  string
+	Brokers []string
+}
+func newConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
+	Brokers := strings.Split(Broker, ",")
+	return ConsumerConfig{
+		Brokers: Brokers,
+		ConsumerGroupId: ConsumerGroupId,
 	}
-
-	return ConsumerMessage{
-		Topic: *message.TopicPartition.Topic,
-		MessageId: value["id"],
-		Headers: message.Headers,
-		Value: value["data"],
-	}, nil
+}
+func newKafkaReadConfig(config ConsumerConfig, topic string) kafka.ReaderConfig {
+	c := kafka.ReaderConfig{
+		Brokers: config.Brokers,
+		GroupID: config.ConsumerGroupId,
+		Topic: topic,
+	}
+	return c
 }
 
-func StartConsumer(config *kafka.ConfigMap) error {
-	if len(callbacks) == 0 {return &NoCallbackRegisteredError{}}
-
-	c, err := kafka.NewConsumer(config)
-	if err != nil {
-		return err
-	}
-
-	topics := make([]string, 0)
-	for key, _ := range callbacks {
-		topics = append(topics, key)
-	}
-
-	err = c.SubscribeTopics(topics, nil)
-	if err != nil {
-		return err
-	}
-	for {
-		ev := c.Poll(100)
-		switch e := ev.(type) {
-		case *kafka.Message:
-			topic := *e.TopicPartition.Topic
-			if callback, oke := callbacks[topic]; oke {
-				message, err := GenerateConsumerMessage(*e)
-				err = callback(message)
-				if err == nil {
-					_, err = c.CommitMessage(e)
-					if err != nil {
-						return err
-					}
-				} else {
-					return err
+func StartConsumer(topic string, callback Callback, config ConsumerConfig) error {
+	errs := make(chan error, 1)
+	go func() {
+		r := kafka.NewReader(newKafkaReadConfig(config, topic))
+		defer r.Close()
+		for {
+			m, err := r.FetchMessage(context.Background())
+			if err != nil {
+				errs <- err
+			}
+			message, err := GenerateConsumerMessage(m)
+			err = callback(message)
+			if err == nil {
+				if err := r.CommitMessages(context.Background(), m); err != nil {
+					errs <- err
 				}
 			}
-			break
-		case *kafka.Error:
-			fmt.Printf("%% Error %v\n", e)
-		case *kafka.PartitionEOF:
-			fmt.Printf("%% Reached %v\n", e)
+		}
+	}()
+	return <-errs
+}
+
+func StartConsumers (config ConsumerConfig) error {
+	if len(callbacks) == 0 {return &NoCallbackRegisteredError{}}
+
+	for topic, callback := range callbacks {
+		err := StartConsumer(topic, callback, config)
+		if err != nil {
+			return err
 		}
 	}
+	return nil
 }

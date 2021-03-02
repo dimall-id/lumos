@@ -1,20 +1,20 @@
 package event
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 	"strings"
 	"time"
+	"github.com/segmentio/kafka-go"
 )
 
 type Config struct {
-	KafkaConfig kafka.ConfigMap
+	Host string
 	DatasourceConfig DatasourceConfig
 	PoolDuration time.Duration
 }
@@ -80,10 +80,6 @@ func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
 		return kafka.Message{}, e
 	}
 	return kafka.Message{
-		TopicPartition: kafka.TopicPartition{
-			Topic: &message.KafkaTopic,
-			Partition: kafka.PartitionAny,
-		},
 		Headers: headers,
 		Key: []byte(message.KafkaKey),
 		Value: j,
@@ -115,6 +111,18 @@ func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 	tx := DB.Save(data)
 
 	return tx.Error
+}
+
+func SendMessage (topic string, config Config, message kafka.Message) error {
+	w := &kafka.Writer{
+		Addr : kafka.TCP(config.Host),
+		Topic: topic,
+		Balancer: kafka.CRC32Balancer{},
+	}
+
+	err := w.WriteMessages(context.Background(), message)
+
+	return err
 }
 
 func StartProducer (config Config) error {
@@ -152,39 +160,6 @@ func StartProducer (config Config) error {
 	}
 	fmt.Printf("[%s] Done Migrating Outbox Table\n", time.Now().Format(time.RFC850))
 
-	fmt.Printf("[%s] Starting Kafka Producer\n", time.Now().Format(time.RFC850))
-	producer, err := kafka.NewProducer(&config.KafkaConfig)
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
-	fmt.Printf("[%s] Done Kafka Producer\n", time.Now().Format(time.RFC850))
-
-	/**
-	Reading Kafka Event and update the lumos outbox table to ensure the delivered message as delivered and error message to queue for resend
-	 */
-	go func() {
-		for e := range producer.Events() {
-			fmt.Printf("[%s] Getting New Producer Event\n", time.Now().Format(time.RFC850))
-			switch ev := e.(type) {
-			case *kafka.Message:
-				var messageId string
-				var data map[string]string
-				err := json.Unmarshal(ev.Value, &data)
-				if err != nil {
-					log.Fatal(err)
-				}
-				messageId = data["id"]
-				if ev.TopicPartition.Error != nil {
-					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Update("status","QUEUE")
-				} else {
-					db.Model(&LumosOutbox{}).Where("id = ?", messageId).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
-				}
-			}
-			fmt.Printf("[%s] Done Processing Producer Event\n", time.Now().Format(time.RFC850))
-		}
-	}()
-
 	var messages []LumosOutbox
 	for {
 		fmt.Printf("[%s] Fetching Messaging ... \n", time.Now().Format(time.RFC850))
@@ -197,9 +172,14 @@ func StartProducer (config Config) error {
 					return err
 				}
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
-				err = producer.Produce(&kMessage, nil)
+				err = SendMessage(message.KafkaTopic, config, kMessage)
 				if err != nil {
+					fmt.Printf("[%s] Put Backn Message to QUEUE \n", time.Now().Format(time.RFC850))
+					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
 					return err
+				} else {
+					fmt.Printf("[%s] Mark Message as Delivered \n", time.Now().Format(time.RFC850))
+					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
 				}
 			}
 		}
