@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"time"
 )
@@ -14,7 +15,7 @@ type AccessToken struct {
 	PhoneNo string `json:"phone_no" gorm:"phone_no;size:255"`
 	UserName string `json:"user_name" gorm:"user_name:size:255"`
 	UserType string `json:"user_type" gorm:"user_type;size:255"`
-	Roles []string `json:"roles" gorm:"roles;type:varchar[]"`
+	Roles pq.StringArray `json:"roles" gorm:"roles;type:varchar[]"`
 	Iat int64 `json:"iat" gorm:"iat"`
 	Exp int64 `json:"exp" gorm:"exp"`
 }
