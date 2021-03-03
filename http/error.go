@@ -75,6 +75,14 @@ func UnprocessableEntity(errors map[string][]string) HttpError {
 	}
 }
 
+func NotImplemented() HttpError {
+	return HttpError{
+		Code: http.StatusNotImplemented,
+		Message: "Not Implemented",
+		Errors: nil,
+	}
+}
+
 type InvalidRouteError struct {
 	route Route
 }
