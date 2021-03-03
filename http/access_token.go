@@ -1,22 +1,37 @@
 package http
 
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"time"
+)
+
 type AccessToken struct {
-	Iss string `json:"iss"`
-	Exp string `json:"exp"`
-	Jti string `json:"jti"`
-	UserId string `json:"user_id"`
-	RefId string `json:"ref_id"`
-	UserName string `json:"user_name"`
-	UserType string `json:"user_type"`
-	Roles []string `json:"roles"`
+	Jti string `json:"jti" gorm:"jti;size:50"`
+	UserId string `json:"user_id" gorm:"user_id;size:50"`
+	RefId string `json:"ref_id" gorm:"ref_id;size:50"`
+	Email string `json:"email" gorm:"email;size:255"`
+	PhoneNo string `json:"phone_no" gorm:"phone_no;size:255"`
+	UserName string `json:"user_name" gorm:"user_name:size:255"`
+	UserType string `json:"user_type" gorm:"user_type;size:255"`
+	Roles []string `json:"roles" gorm:"roles;type:varchar[]"`
+	Iat int64 `json:"iat" gorm:"iat"`
+	Exp int64 `json:"exp" gorm:"exp"`
+}
+
+func (u *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
+	u.Jti = uuid.New().String()
+	createdAt := time.Now().Unix()
+	u.Iat = createdAt
+	return
 }
 
 func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
-	if val, oke := data["iss"];oke {
-		a.Iss = val.(string)
-	}
 	if val, oke := data["exp"];oke {
-		a.Exp = val.(string)
+		a.Exp = val.(int64)
+	}
+	if val, oke := data["iat"];oke {
+		a.Iat = val.(int64)
 	}
 	if val, oke := data["jti"];oke {
 		a.Jti = val.(string)
