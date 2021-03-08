@@ -16,23 +16,23 @@ type AccessToken struct {
 	UserName string `json:"user_name" gorm:"user_name:size:255"`
 	UserType string `json:"user_type" gorm:"user_type;size:255"`
 	Roles pq.StringArray `json:"roles" gorm:"roles;type:varchar[]"`
-	Iat int64 `json:"iat" gorm:"iat"`
-	Exp int64 `json:"exp" gorm:"exp"`
+	Iat float64 `json:"iat" gorm:"iat"`
+	Exp float64 `json:"exp" gorm:"exp"`
 }
 
 func (u *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
 	u.Jti = uuid.New().String()
 	createdAt := time.Now().Unix()
-	u.Iat = createdAt
+	u.Iat = float64(createdAt)
 	return
 }
 
 func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
 	if val, oke := data["exp"];oke {
-		a.Exp = val.(int64)
+		a.Exp = val.(float64)
 	}
 	if val, oke := data["iat"];oke {
-		a.Iat = val.(int64)
+		a.Iat = val.(float64)
 	}
 	if val, oke := data["jti"];oke {
 		a.Jti = val.(string)

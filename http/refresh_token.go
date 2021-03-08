@@ -11,21 +11,23 @@ type RefreshToken struct {
 	Jti string 	`json:"-" gorm:"jti;size:50"`
 	UserId string `json:"user_id" gorm:"user_id;size:50"`
 	IsClaimed bool `json:"-" gorm:"is_claimed"`
-	Iat int64 `json:"iat" gorm:"iat"`
-	Exp int64 `json:"exp" gorm:"exp"`
+	Iat float64 `json:"iat" gorm:"iat"`
+	Exp float64 `json:"exp" gorm:"exp"`
 }
 
 func (u *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
 	u.Rti = uuid.New().String()
 	createdAt := time.Now().Unix()
-	u.Iat = createdAt
+	u.Iat = float64(createdAt)
 	return
 }
 
 func (r *RefreshToken) FillRefreshToken (data map[string]interface{}) {
-
+	if val, oke := data["iat"];oke {
+		r.Iat = val.(float64)
+	}
 	if val, oke := data["exp"];oke {
-		r.Exp = val.(int64)
+		r.Exp = val.(float64)
 	}
 	if val, oke := data["jti"];oke {
 		r.Jti = val.(string)
