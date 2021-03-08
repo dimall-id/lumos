@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/dimall-id/jwt-go"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
@@ -20,6 +21,16 @@ func (u *RefreshToken) BeforeCreate(tx *gorm.DB) (err error) {
 	createdAt := time.Now().Unix()
 	u.Iat = float64(createdAt)
 	return
+}
+
+func (r *RefreshToken) FromJwtBase64 (base64Token string) error {
+	token, err := jwt.ParseUnverified(base64Token, jwt.MapClaims{})
+	if err != nil {
+		return err
+	}
+	claims, _ := token.Claims.(jwt.MapClaims)
+	r.FillRefreshToken(claims)
+	return nil
 }
 
 func (r *RefreshToken) FillRefreshToken (data map[string]interface{}) {

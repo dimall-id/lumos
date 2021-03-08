@@ -7,7 +7,6 @@ import (
 	"github.com/dimall-id/lumos/misc"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/dimall-id/jwt-go"
 )
 
 func methodNotAllowedHandler() http.Handler {
@@ -67,13 +66,9 @@ func CheckAuthorization(authentication string, rr Route) HttpError {
 
 func GetTokenClaim (authentication string) (AccessToken, error) {
 	tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-	token, err := jwt.ParseUnverified(tokens["token"], jwt.MapClaims{})
-	if err != nil {
-		return AccessToken{}, err
-	}
-	claims, _ := token.Claims.(jwt.MapClaims)
-	var t = AccessToken{}
-	t.FillAccessToken(claims)
+	t := AccessToken{}
+	err := t.FromJwtBase64(tokens["token"])
+	if err != nil {return AccessToken{}, err}
 	return t, nil
 }
 

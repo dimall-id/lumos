@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/dimall-id/jwt-go"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -20,11 +21,21 @@ type AccessToken struct {
 	Exp float64 `json:"exp" gorm:"exp"`
 }
 
-func (u *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
-	u.Jti = uuid.New().String()
+func (a *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
+	a.Jti = uuid.New().String()
 	createdAt := time.Now().Unix()
-	u.Iat = float64(createdAt)
+	a.Iat = float64(createdAt)
 	return
+}
+
+func (a *AccessToken) FromJwtBase64 (base64Token string) error {
+	token, err := jwt.ParseUnverified(base64Token, jwt.MapClaims{})
+	if err != nil {
+		return err
+	}
+	claims, _ := token.Claims.(jwt.MapClaims)
+	a.FillAccessToken(claims)
+	return nil
 }
 
 func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
