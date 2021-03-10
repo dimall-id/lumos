@@ -84,17 +84,11 @@ func NotImplemented() HttpError {
 }
 
 type InvalidRouteError struct {
-	route Route
+	msg string
 }
 
 func (ir *InvalidRouteError) Error() string {
-	var funcStatus string
-	if ir.route.Func == nil {
-		funcStatus = "NOT PARSED"
-	} else {
-		funcStatus = "PARSED"
-	}
-	return fmt.Sprintf("Route given is invalid. Http Method : %s, Url : %s, Func : %s", ir.route.HttpMethod, ir.route.Url, funcStatus)
+	return ir.msg
 }
 
 type ExistingRouteError struct {

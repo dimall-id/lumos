@@ -16,6 +16,8 @@ func methodNotAllowedHandler() http.Handler {
 		res, _ := json.Marshal(err)
 		var dest bytes.Buffer
 		json.Compact(&dest, res)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Write(dest.Bytes())
 	})
 }
@@ -27,6 +29,8 @@ func notFoundHandler() http.Handler {
 		res, _ := json.Marshal(err)
 		var dest bytes.Buffer
 		json.Compact(&dest, res)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Write(dest.Bytes())
 	})
 }
@@ -90,6 +94,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 			w.WriteHeader(err.Code)
 			res = BuildJsonResponse(err)
 		} else {
+			w.WriteHeader(rr.StatusCode)
 			res = BuildJsonResponse(data)
 		}
 	}
