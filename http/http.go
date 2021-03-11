@@ -93,11 +93,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 			w.WriteHeader(err.Code)
 			res = BuildJsonResponse(err)
 		} else {
-			if &rr.StatusCode == nil {
-				w.WriteHeader(http.StatusOK)
-			} else {
-				w.WriteHeader(rr.StatusCode)
-			}
+			if rr.StatusCode == 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(rr.StatusCode)}
 			res = BuildJsonResponse(data)
 		}
 	}
