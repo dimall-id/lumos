@@ -35,39 +35,38 @@ func notFoundHandler() http.Handler {
 	})
 }
 
-func CheckRole (roles []string, routes []string) bool {
-	if len(routes) <= 0 {
-		return true
-	}
- 	route := make(map[string]string)
-	for _,d := range routes {
-		route[d] = d
-	}
+/**
+@TODO : Make unit testing
+ */
+func CheckRole (roles []string, routes map[string]string) bool {
 	for _, role := range roles {
-		if _, oke := route[fmt.Sprintf("%v", role)]; oke {
-			return true
-		}
+		if _, oke := routes[fmt.Sprintf("%v", role)]; oke {return true}
 	}
 	return false
 }
 
+/**
+@TODO : make unit testing
+ */
 func CheckAuthorization(authentication string, rr Route) HttpError {
+	roles := make(map[string]string)
+	for _, role := range rr.Roles {roles[role] = role}
+	if len(roles) <= 0 {return HttpError{}}
+	if _, oke := roles["ANONYMOUS"]; oke {return HttpError{}}
+
 	if authentication == "" {
-		if !CheckRole([]string{"ANONYMOUS"}, rr.Roles) {
-			return Unauthorized()
-		}
+		return Unauthorized()
 	} else {
 		claims, err := GetTokenClaim(authentication)
-		if err != nil {
-			return BadRequest()
-		}
-		if !CheckRole(claims.Roles, rr.Roles) {
-			return Unauthorized()
-		}
+		if err != nil {return BadRequest()}
+		if !CheckRole(claims.Roles, roles) {return Unauthorized()}
 	}
 	return HttpError{}
 }
 
+/**
+@TODO : make unit testing
+ */
 func GetTokenClaim (authentication string) (AccessToken, error) {
 	tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
 	t := AccessToken{}
