@@ -61,7 +61,6 @@ func isExist (route Route) (bool, int) {
 }
 
 func AddRoute (route Route) error {
-	if &route.StatusCode == nil {route.StatusCode = http.StatusOK}
 	if oke,_ := isExist(route); oke {
 		return &ExistingRouteError{route: route}
 	} else if err := route.IsValid(); err != nil {
