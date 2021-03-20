@@ -13,11 +13,11 @@ func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := MethodNotAllow()
 		w.WriteHeader(err.Code)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		res, _ := json.Marshal(err)
 		var dest bytes.Buffer
 		json.Compact(&dest, res)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Write(dest.Bytes())
 	})
 }
@@ -26,11 +26,11 @@ func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := NotFound()
 		w.WriteHeader(err.Code)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		res, _ := json.Marshal(err)
 		var dest bytes.Buffer
 		json.Compact(&dest, res)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Write(dest.Bytes())
 	})
 }

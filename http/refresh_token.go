@@ -8,8 +8,8 @@ import (
 )
 
 type RefreshToken struct {
-	Rti string `json:"rti" gorm:"rti;size:50"`
-	Jti string 	`json:"-" gorm:"jti;size:50"`
+	Rti string `json:"rti" gorm:"rti;primaryKey"`
+	Jti string 	`json:"-" gorm:"jti;primaryKey"`
 	UserId string `json:"user_id" gorm:"user_id;size:50"`
 	IsClaimed bool `json:"-" gorm:"is_claimed"`
 	Iat float64 `json:"iat" gorm:"iat"`
