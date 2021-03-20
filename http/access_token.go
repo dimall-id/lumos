@@ -16,7 +16,7 @@ type AccessToken struct {
 	PhoneNo string `json:"phone_no" gorm:"phone_no"`
 	UserName string `json:"user_name" gorm:"user_name"`
 	UserType string `json:"user_type" gorm:"user_type"`
-	Roles pq.StringArray `json:"roles" gorm:"roles"`
+	Roles pq.StringArray `json:"roles" gorm:"roles;type:varchar[]"`
 	Iat float64 `json:"iat" gorm:"iat"`
 	Exp float64 `json:"exp" gorm:"exp"`
 }
