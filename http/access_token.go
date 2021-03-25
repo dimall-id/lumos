@@ -9,13 +9,13 @@ import (
 )
 
 type AccessToken struct {
-	Jti string `json:"jti" gorm:"jti;size:50"`
-	UserId string `json:"user_id" gorm:"user_id;size:50"`
-	RefId string `json:"ref_id" gorm:"ref_id;size:50"`
-	Email string `json:"email" gorm:"email;size:255"`
-	PhoneNo string `json:"phone_no" gorm:"phone_no;size:255"`
-	UserName string `json:"user_name" gorm:"user_name:size:255"`
-	UserType string `json:"user_type" gorm:"user_type;size:255"`
+	Jti string `json:"jti" gorm:"jti;primaryKey"`
+	UserId string `json:"user_id" gorm:"user_id"`
+	RefId string `json:"ref_id" gorm:"ref_id"`
+	Email string `json:"email" gorm:"email"`
+	PhoneNo string `json:"phone_no" gorm:"phone_no"`
+	UserName string `json:"user_name" gorm:"user_name"`
+	UserType string `json:"user_type" gorm:"user_type"`
 	Roles pq.StringArray `json:"roles" gorm:"roles;type:varchar[]"`
 	Iat float64 `json:"iat" gorm:"iat"`
 	Exp float64 `json:"exp" gorm:"exp"`
