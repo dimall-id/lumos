@@ -98,7 +98,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	log.Infof("start handling request for url \"%s\"", r.RequestURI)
 	log.Infoln("checking the authorization")
 	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
-	if &err != nil {
+	if err.StatusCode != 0 {
 		log.Infoln("fail to check authorization")
 		w.WriteHeader(err.StatusCode)
 		res = BuildJsonResponse(err.Body)
