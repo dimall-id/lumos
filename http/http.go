@@ -120,9 +120,9 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	for i, _ := range routes {
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
-			log.WithContext(r.Context()).Infof("processing request at %s", r.URL)
+			log.WithContext(r.Context()).Infof("processing request at %s\n", r.URL)
 			HandleRequest(w, r, rr)
-			log.WithContext(r.Context()).Infof("process handled at %s", r.URL)
+			log.WithContext(r.Context()).Infof("process handled at %s\n", r.URL)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
@@ -138,15 +138,23 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 
 func setPublicKey (publicKeyUrl string) error {
 	log.Infoln("Checking if public key url exists")
-	if publicKeyUrl == "" {return errors.New("public key url not provided")}
+	if publicKeyUrl == "" {
+		return errors.New("public key url not provided")
+	}
 
 	log.Infoln("Fetching the public key content")
 	resp, err := http.Get(publicKeyUrl)
-	if err != nil {return errors.New("fail to consume public key url")}
+	if err != nil {
+		log.Errorln(err)
+		return errors.New("fail to consume public key url")
+	}
 
 	log.Infoln("reading public key response content")
 	byte, err := ioutil.ReadAll(resp.Body)
-	if err != nil {return errors.New("fail to read http response")}
+	if err != nil {
+		log.Errorln(err)
+		return errors.New("fail to read http response")
+	}
 
 	_publicKey = string(byte)
 	return nil
