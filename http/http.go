@@ -69,7 +69,7 @@ func CheckAuthorization(authentication string, rr Route) Response {
 		if err != nil {
 			log.Infof("fail to validate the jwt token signature\n")
 			log.Error(err)
-			vErr := err.(jwt.ValidationError)
+			vErr := err.(*jwt.ValidationError)
 			return Forbidden(vErr.Error())
 		}
 		log.Infof("parsing token claim to AcessToken\n")
@@ -97,7 +97,8 @@ func BuildJsonResponse (response interface{}) []byte {
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	var res []byte
-	log.Debugln("checking the authorization")
+	log.Infof("start handling request for url \"%s\"", r.RequestURI)
+	log.Infoln("checking the authorization")
 	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
 	if &err != nil {
 		log.Infoln("fail to check authorization")
@@ -109,6 +110,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 		if resp.StatusCode != 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(resp.StatusCode)}
 		res = BuildJsonResponse(resp.Body)
 	}
+	log.WithField("Response Size", len(res)).Infof("done handling request for url \"%s\"", r.RequestURI)
 	w.Write(res)
 }
 
@@ -120,9 +122,9 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	for i, _ := range routes {
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
-			log.WithContext(r.Context()).Infof("processing request at %s\n", r.URL)
+			log.WithContext(r.Context()).Infof("processing request at \"%s\"", r.RequestURI)
 			HandleRequest(w, r, rr)
-			log.WithContext(r.Context()).Infof("process handled at %s\n", r.URL)
+			log.WithContext(r.Context()).Infof("processed handled at \"%s\"", r.RequestURI)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
