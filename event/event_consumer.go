@@ -7,6 +7,7 @@ import (
 	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 type ExistingCallbackError struct {
@@ -70,6 +71,13 @@ func RemoveCallback (topic string) error {
 type ConsumerConfig struct {
 	ConsumerGroupId  string
 	Brokers []string
+}
+func NewConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
+	Brokers := strings.Split(Broker, ",")
+	return ConsumerConfig{
+		Brokers: Brokers,
+		ConsumerGroupId: ConsumerGroupId,
+	}
 }
 
 func StartConsumers (config ConsumerConfig) error {
