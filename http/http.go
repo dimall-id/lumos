@@ -62,9 +62,8 @@ func CheckAuthorization(authentication string, rr Route) Response {
 		return Unauthorized("authorization key is not provided in the header")
 	} else {
 		log.Infof("parsing and validating the jwt token signature\n")
-		var claims jwt.MapClaims
 		tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-		_, err := jwt.ParseWithClaims(tokens["token"], claims, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
+		claims, err := jwt.ParseWithClaims(tokens["token"], jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
 		if err != nil {
 			log.Infof("fail to validate the jwt token signature\n")
 			log.Error(err)
@@ -73,7 +72,7 @@ func CheckAuthorization(authentication string, rr Route) Response {
 		}
 		log.Infof("parsing token claim to AcessToken\n")
 		accessToken := AccessToken{}
-		accessToken.FillAccessToken(claims)
+		accessToken.FillAccessToken(claims.Claims.(jwt.MapClaims))
 		log.Infof("checking issued at and expired at\n")
 		err = accessToken.Valid()
 		if err != nil {
