@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/segmentio/kafka-go v0.4.10
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
