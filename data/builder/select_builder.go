@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 )
-import "github.com/dimall-id/lumos/misc"
+import "github.com/dimall-id/lumos/v2/misc"
 
 const (
 	SelectPattern = "\\[(?P<type>select);(?P<condition>[a-zA-Z,]+)\\]"

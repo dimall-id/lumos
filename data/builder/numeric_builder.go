@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"github.com/dimall-id/lumos/misc"
+	"github.com/dimall-id/lumos/v2/misc"
 	"gorm.io/gorm"
 	"regexp"
 )

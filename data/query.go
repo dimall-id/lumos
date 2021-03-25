@@ -2,8 +2,8 @@ package data
 
 import (
 	"fmt"
-	"github.com/dimall-id/lumos/data/builder"
-	"github.com/dimall-id/lumos/misc"
+	"github.com/dimall-id/lumos/v2/data/builder"
+	"github.com/dimall-id/lumos/v2/misc"
 	"gorm.io/gorm"
 	"regexp"
 	"strconv"

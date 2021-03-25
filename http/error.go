@@ -27,7 +27,7 @@ func BadRequest(cause string) Response {
 
 func Unauthorized(cause string) Response {
 	return Response {
-		StatusCode: http.StatusBadRequest,
+		StatusCode: http.StatusUnauthorized,
 		Body: map[string]interface{} {
 			"message" : "unauthorized",
 			"cause" : cause,
@@ -95,11 +95,11 @@ func NotImplemented(cause string) Response {
 }
 
 type InvalidRouteError struct {
-	msg string
+	route Route
 }
 
 func (ir *InvalidRouteError) Error() string {
-	return ir.msg
+	return "Route given is invalid"
 }
 
 type ExistingRouteError struct {

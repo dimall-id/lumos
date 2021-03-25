@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dimall-id/jwt-go"
-	"github.com/dimall-id/lumos/misc"
+	"github.com/dimall-id/lumos/v2/misc"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"

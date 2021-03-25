@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -15,8 +16,8 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -26,20 +27,20 @@ func TestRoute_IsValid(t *testing.T) {
 			route: Route{
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
-			expect: false,
+			expect: true,
 		},
 		{
 			route: Route{
 				Name: "Product List",
 				HttpMethod: "GETS",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -50,8 +51,8 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GETS",
 				Url: "/pro du cts",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 			},
 			expect: false,
@@ -67,19 +68,19 @@ func TestRoute_IsValid(t *testing.T) {
 		{
 			route: Route{
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 			},
-			expect: false,
+			expect: true,
 		},
 		{
 			route: Route{
 				Name: "Product List",
 				HttpMethod: "POST",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -90,8 +91,8 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "POST",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{},
 			},
@@ -101,11 +102,12 @@ func TestRoute_IsValid(t *testing.T) {
 
 	for i, test := range routes {
 		isValid := test.route.IsValid()
-		if isValid != test.expect {
+		if (isValid == nil) != test.expect {
 			isFunc := "PARSED"
 			if test.route.Func == nil {
 				isFunc = "NOT PARSED"
 			}
+			fmt.Println(isValid)
 			t.Errorf("[%d] Route testing is invalid HTTP METHOD : %s, URL : %s, NAME : %s, FUNC : %s", i, test.route.HttpMethod, test.route.Url, test.route.Name, isFunc)
 		}
 	}
@@ -139,20 +141,20 @@ func TestAddRoute(t *testing.T) {
 			HttpMethod: "GET",
 			Url: "/products",
 		}
-		if err := AddRoute(r1); err == nil {
+		if err := AddRoute(r1); err != nil {
 			t.Error("Fail to Test, Invalid Route still got added without error")
 		}
 		r2 := Route {
 			Name: "Product List",
-			HttpMethod: "GET",
+			HttpMethod: "POST",
 			Url: "/products",
-			Func: func(r *http.Request) (interface{}, HttpError) {
-				return nil, HttpError{}
+			Func: func(r *http.Request) Response {
+				return Response{}
 			},
 			Roles: []string{"USER"},
 		}
 		if err := AddRoute(r2); err != nil {
-			t.Error("Fail to test, an invalid route can't be added to routes")
+			t.Error("Fail to test, a valid route can't be added to routes")
 		}
 		if err := AddRoute(r2); err == nil {
 			t.Error("Fail to test, an existing route can be added to routes")
@@ -173,8 +175,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 			},
 		}
@@ -187,8 +189,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -196,8 +198,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -210,8 +212,8 @@ func TestAddAllRoute(t *testing.T) {
 			Name: "Product List",
 			HttpMethod: "GET",
 			Url: "/products",
-			Func: func(r *http.Request) (interface{}, HttpError) {
-				return nil, HttpError{}
+			Func: func(r *http.Request) Response {
+				return Response{}
 			},
 			Roles: []string{"USER"},
 		})
@@ -221,8 +223,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product List",
 				HttpMethod: "GET",
 				Url:        "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -236,8 +238,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Add",
 				HttpMethod: "POST",
 				Url:        "/products",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -245,8 +247,8 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Delete",
 				HttpMethod: "DELETE",
 				Url:        "/products/{id}",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
@@ -254,13 +256,13 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Update",
 				HttpMethod: "PUT",
 				Url:        "/products/{id}",
-				Func: func(r *http.Request) (interface{}, HttpError) {
-					return nil, HttpError{}
+				Func: func(r *http.Request) Response {
+					return Response{}
 				},
 				Roles: []string{"USER"},
 			},
 		}
-		if err := AddAllRoute(r4s); err != nil {
+		if err := AddAllRoute(r4s); err == nil {
 			t.Errorf("Fail to test, this should success to add route. %s", err)
 		}
 	})
@@ -272,8 +274,8 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Add",
 			HttpMethod: "POST",
 			Url:        "/products",
-			Func: func(r *http.Request) (interface{}, HttpError) {
-				return nil, HttpError{}
+			Func: func(r *http.Request) Response {
+				return Response{}
 			},
 			Roles: []string{"USER"},
 		},
@@ -281,8 +283,8 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Delete",
 			HttpMethod: "DELETE",
 			Url:        "/products/{id}",
-			Func: func(r *http.Request) (interface{}, HttpError) {
-				return nil, HttpError{}
+			Func: func(r *http.Request) Response {
+				return Response{}
 			},
 			Roles: []string{"USER"},
 		},
@@ -290,8 +292,8 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Update",
 			HttpMethod: "PUT",
 			Url:        "/products/{id}",
-			Func: func(r *http.Request) (interface{}, HttpError) {
-				return nil, HttpError{}
+			Func: func(r *http.Request) Response {
+				return Response{}
 			},
 			Roles: []string{"USER"},
 		},

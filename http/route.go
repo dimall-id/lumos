@@ -65,7 +65,7 @@ func AddRoute (route Route) error {
 	if oke,_ := isExist(route); oke {
 		return &ExistingRouteError{route: route}
 	} else if err := route.IsValid(); err != nil {
-		return &InvalidRouteError{msg: err.Error()}
+		return &InvalidRouteError{route: route}
 	} else {
 		routes = append(routes, route)
 		return nil
@@ -84,7 +84,7 @@ func AddAllRoute (rs []Route) error {
 		if oke,_ := isExist(route); oke {
 			return &ExistingRouteError{route: route}
 		} else if err := route.IsValid(); err != nil {
-			return &InvalidRouteError{msg: err.Error()}
+			return &InvalidRouteError{route: route}
 		}
 	}
 	routes = append(routes, rs...)
