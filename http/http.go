@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var _publicKey string
+var _publicKey []byte
 var log *logrus.Logger
 
 func methodNotAllowedHandler() http.Handler {
@@ -152,13 +152,13 @@ func setPublicKey (publicKeyUrl string) error {
 	}
 
 	log.Infoln("reading public key response content")
-	byte, err := ioutil.ReadAll(resp.Body)
+	byteKey, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Errorln(err)
 		return errors.New("fail to read http response")
 	}
 
-	_publicKey = string(byte)
+	_publicKey = byteKey
 	return nil
 }
 
