@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/segmentio/kafka-go"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type ExistingCallbackError struct {
@@ -50,7 +51,6 @@ func GenerateConsumerMessage (message kafka.Message) (ConsumerMessage, error) {
 type Callback func(message ConsumerMessage) error
 
 var callbacks = make(map[string]Callback)
-
 func AddCallback (topic string, callback Callback) error {
 	if _, oke := callbacks[topic]; oke {
 		return &ExistingCallbackError{topic}
@@ -59,7 +59,6 @@ func AddCallback (topic string, callback Callback) error {
 	}
 	return nil
 }
-
 func RemoveCallback (topic string) error {
 	if _, oke := callbacks[topic]; oke {
 		delete(callbacks, topic)
@@ -92,73 +91,33 @@ func StartConsumers (config ConsumerConfig) error {
 	for {
 		m, err := r.FetchMessage(context.Background())
 		if err != nil {
-			log.Println(err)
+			log.Errorf("fail to fetch message due to %s", err.Error())
 			continue
 		}
 		message, err := GenerateConsumerMessage(m)
 		if err != nil {
-			log.Println("error in converting data from kafka.message to consumer message")
-			log.Println(err)
+			log.Errorf("error in converting data from kafka.message to ConsumerMessage %s", err.Error())
 			continue
 		}
+		log.WithFields(logrus.Fields{
+			"topic" : message.Topic,
+			"partition" : m.Partition,
+			"offset" : m.Offset,
+			"message_id" : message.MessageId,
+		}).Infof("fetching message from broker")
 		if callback, oke := callbacks[message.Topic]; oke {
 			err := callback(message)
 			if err != nil {
-				log.Println("event callback fail to execute")
-				log.Println(err)
+				log.Errorf("event callback fail to finish it job due to %s", err.Error())
 				continue
 			}
 			err = r.CommitMessages(context.Background(), m)
 			if err != nil {
-				log.Println("fail to commit message")
-				log.Println(err)
+				log.Errorf("fail to commit message due to %s", err.Error())
 			}
 		} else {
-			log.Printf("no callback for topic '%s' found", message.Topic)
+			log.Errorf("no callback for topic '%s' found", message.Topic)
 		}
 	}
-	//
-	//group, err := kafka.NewConsumerGroup(newKafkaConsumerGroupConfig(config, topics))
-	//if err != nil {return err}
-	//defer group.Close()
-	//
-	//for {
-	//	gen, err := group.Next(context.TODO())
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	for topic, callback := range callbacks {
-	//		assignments := gen.Assignments[topic]
-	//		for _, assignment := range assignments {
-	//			partition, offset := assignment.ID, assignment.Offset
-	//			gen.Start(func (ctx context.Context) {
-	//				reader := kafka.NewReader(newKafkaReadConfig(config, topic, partition))
-	//				defer reader.Close()
-	//
-	//				reader.SetOffset(offset)
-	//				for {
-	//					msg, err := reader.FetchMessage(context.Background())
-	//					switch err {
-	//					case kafka.ErrGenerationEnded:
-	//						// generation has ended.  commit offsets.  in a real app,
-	//						// offsets would be committed periodically.
-	//						gen.CommitOffsets(map[string]map[int]int64{"my-topic": {partition: offset + 1}})
-	//						return
-	//					case nil:
-	//						message, err := GenerateConsumerMessage(msg)
-	//						err = callback(message)
-	//						if err == nil {
-	//							offset = msg.Offset
-	//						}
-	//					default:
-	//						fmt.Printf("error reading message: %+v\n", err)
-	//					}
-	//
-	//				}
-	//			})
-	//		}
-	//	}
-	//}
 }
 

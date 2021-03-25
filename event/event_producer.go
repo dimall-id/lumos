@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -87,7 +88,6 @@ func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
 }
 
 func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
-
 	var keys = make([]string, len(message.Headers))
 	var values = make([]string, len(message.Headers))
 	var i = 0
@@ -118,7 +118,6 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 		Addr : kafka.TCP(config.Host),
 		Topic: topic,
 		Balancer: kafka.CRC32Balancer{},
-
 	}
 
 	err := w.WriteMessages(context.Background(), message)
@@ -136,36 +135,30 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.Port,
 		config.DatasourceConfig.SslMode)
 
-	fmt.Printf("[%s] Starting DB Connection\n", time.Now().Format(time.RFC850))
+	log.Info("starting DB connection")
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
 		PrepareStmt: true,
 	})
-	if err != nil {
-		return err
-	}
+	if err != nil {return err}
 
 	var sqlDB *sql.DB
 	sqlDB, err = db.DB()
-	if err != nil {
-		return err
-	}
+	if err != nil {return err}
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetMaxIdleConns(10)
 
 	defer sqlDB.Close()
 
-	fmt.Printf("[%s] Migrating Outbox Table\n", time.Now().Format(time.RFC850))
+	log.Info("migrating outbox table")
 	err = initOutboxTable(db)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("[%s] Done Migrating Outbox Table\n", time.Now().Format(time.RFC850))
+	if err != nil {return err}
+	log.Info("done migrating outbox table")
 
 	var messages []LumosOutbox
 	for {
-		fmt.Printf("[%s] Fetching Messaging ... \n", time.Now().Format(time.RFC850))
+		log.Info("fetching message with status QUQUE")
 		db.Where("status = ?", "QUEUE").Find(&messages)
-		fmt.Printf("[%s] Processing %d amount of message \n", time.Now().Format(time.RFC850), len(messages))
+		log.Infof("processing %d amount of message", len(messages))
 		if len(messages) > 0 {
 			for _, message := range messages {
 				kMessage, err := GenerateKafkaMessage(message)
@@ -175,12 +168,13 @@ func StartProducer (config Config) error {
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
 				err = SendMessage(message.KafkaTopic, config, kMessage)
 				if err != nil {
-					fmt.Printf("[%s] Put Backn Message to QUEUE \n", time.Now().Format(time.RFC850))
+					log.Errorf("put back message to QUEUE due to %s", err.Error())
 					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
-					return err
+					log.Info("message put backed to QUEUE")
 				} else {
-					fmt.Printf("[%s] Mark Message as Delivered \n", time.Now().Format(time.RFC850))
+					log.Info("marking message as delivered")
 					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
+					log.Info("message marked as delivered")
 				}
 			}
 		}
@@ -189,7 +183,7 @@ func StartProducer (config Config) error {
 		if &config.PoolDuration != nil {
 			PoolDuration = config.PoolDuration
 		}
-		fmt.Printf("[%s] Sleep for %d Seconds\n", time.Now().Format(time.RFC850), PoolDuration)
+		log.Infof("sleep for %d seconds", PoolDuration)
 		time.Sleep(PoolDuration * time.Second)
 		/**
 		Clear the data for GC to collect

@@ -3,6 +3,8 @@ package http
 import (
 	"errors"
 	"fmt"
+	log "github.com/dimall-id/lumos/v2/logger"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
@@ -18,6 +20,14 @@ type Route struct {
 	Url	string
 	Roles []string
 	Func func (r *http.Request) Response
+}
+
+func (r *Route) toFieldMaps() logrus.Fields {
+	return map[string]interface{} {
+		"name" : r.Name,
+		"http_method" : r.HttpMethod,
+		"url" : r.Url,
+	}
 }
 
 func (r *Route) IsValid() error {
@@ -55,24 +65,31 @@ var routes []Route
 func isExist (route Route) (bool, int) {
 	for i, r := range routes {
 		if r.Equal(route) {
-			return true,i
+			return true, i
 		}
 	}
-	return false,-1
+	return false, -1
 }
 
 func AddRoute (route Route) error {
+	log.Info("checking existing route")
 	if oke,_ := isExist(route); oke {
+		log.Warn("existing routes has been found")
 		return &ExistingRouteError{route: route}
-	} else if err := route.IsValid(); err != nil {
+	}
+	log.Info("checking route is valid")
+	if err := route.IsValid(); err != nil {
+		log.Errorf("route is not valid due to %s", err.Error())
 		return &InvalidRouteError{route: route}
 	} else {
+		log.Info("appending new route")
 		routes = append(routes, route)
 		return nil
 	}
 }
 
 func AddAllRoute (rs []Route) error {
+	log.Info("checking if double route exist")
 	for i, r1 := range rs {
 		for j, r2 := range rs {
 			if i != j && r1.Equal(r2) {
@@ -81,12 +98,18 @@ func AddAllRoute (rs []Route) error {
 		}
 	}
 	for _,route := range rs {
+		log.Info("checking existing route")
 		if oke,_ := isExist(route); oke {
+			log.Warn("existing routes has been found")
 			return &ExistingRouteError{route: route}
-		} else if err := route.IsValid(); err != nil {
+		}
+		log.Info("checking route is valid")
+		if err := route.IsValid(); err != nil {
+			log.Errorf("route is not valid due to %s", err.Error())
 			return &InvalidRouteError{route: route}
 		}
 	}
+	log.Info("appending new routes")
 	routes = append(routes, rs...)
 	return nil
 }

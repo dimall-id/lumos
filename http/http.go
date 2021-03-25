@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dimall-id/jwt-go"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/dimall-id/lumos/v2/misc"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
-	log "github.com/sirupsen/logrus"
 )
 
 var _publicKey []byte
@@ -52,36 +52,40 @@ func CheckAuthorization(authentication string, rr Route) Response {
 	log.Infoln("converting array of role to may of roles")
 	roles := make(map[string]string)
 	for _, role := range rr.Roles {roles[role] = role}
-	log.Infof("checking the len of roles in routes. len = %d\n", len(roles))
+	log.Infof("checking the len of roles in routes. len = %d", len(roles))
 	if len(roles) <= 0 {return Response{}}
-	log.Infof("checking if roles has ANONYMOUS role\n")
-	if _, oke := roles["ANONYMOUS"]; oke {return Response{}}
+	log.Infof("checking if roles has ANONYMOUS role")
+	if _, oke := roles["ANONYMOUS"]; oke {
+		log.Infof("routes contains ANONYMOUS role")
+		return Response{}
+	}
 
 	if authentication == "" {
-		log.Infof("authorization key if not provided in the header\n")
+		log.Infof("authorization key if not provided in the header")
 		return Unauthorized("authorization key is not provided in the header")
 	} else {
-		log.Infof("parsing and validating the jwt token signature\n")
+		log.Infof("parsing and validating the jwt token signature")
 		tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
 		claims, err := jwt.ParseWithClaims(tokens["token"], jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
 		if err != nil {
-			log.Infof("fail to validate the jwt token signature\n")
+			log.Infof("fail to validate the jwt token signature")
 			log.Error(err)
 			vErr := err.(*jwt.ValidationError)
 			return Forbidden(vErr.Error())
 		}
-		log.Infof("parsing token claim to AcessToken\n")
+		log.Infof("parsing token claim to AcessToken")
 		accessToken := AccessToken{}
 		accessToken.FillAccessToken(claims.Claims.(jwt.MapClaims))
-		log.Infof("checking issued at and expired at\n")
+		log.Infof("checking issued at and expired at")
 		err = accessToken.Valid()
 		if err != nil {
-			log.Infoln("invalid access token")
-			log.Errorln(err)
-			return Forbidden(err.Error())
+			log.Errorf("invalid access token due to %s", err.Error())
+			return Forbidden(fmt.Sprintf("invalid access token due to %s", err.Error()))
 		}
 		log.Infof("checking role of user vs route role")
-		if !CheckRole(accessToken.Roles, roles) {return Unauthorized("user don't have role to access the resources")}
+		if !CheckRole(accessToken.Roles, roles) {
+			return Unauthorized("user don't have role to access the resources")
+		}
 	}
 	return Response{}
 }
@@ -95,7 +99,7 @@ func BuildJsonResponse (response interface{}) []byte {
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	var res []byte
-	log.Infof("start handling request for url \"%s\"", r.RequestURI)
+	log.Infof("start handling request for url %s", r.RequestURI)
 	log.Infoln("checking the authorization")
 	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
 	if err.StatusCode != 0 {
@@ -113,21 +117,27 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 }
 
 func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
+	log.Infoln("initializing mux router")
 	r := mux.NewRouter()
+	log.Infoln("registering method not found handler")
 	r.MethodNotAllowedHandler = methodNotAllowedHandler()
+	log.Infoln("registering not found handler")
 	r.NotFoundHandler = notFoundHandler()
 
+	log.Infof("register routes, total %d routes", len(routes))
 	for i, _ := range routes {
+		log.WithFields(routes[i].toFieldMaps()).Infof("registering routes %s", routes[i].Name)
 		rr := GetRouteAt(i)
 		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
-			log.WithContext(r.Context()).Infof("processing request at \"%s\"", r.RequestURI)
 			HandleRequest(w, r, rr)
-			log.WithContext(r.Context()).Infof("processed handled at \"%s\"", r.RequestURI)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
+	log.Info("registering content type middleware")
 	r.Use(ContentTypeMiddleware)
+	log.Info("registering jwt middleware")
 	r.Use(JwtTokenMiddleware)
+	log.Infof("registering middlewares, total %d middlewares", len(middleware))
 	for _, mwr := range middleware {
 		mw := mwr
 		r.Use(mw)
@@ -137,12 +147,12 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 }
 
 func setPublicKey (publicKeyUrl string) error {
-	log.Infoln("Checking if public key url exists")
+	log.Infoln("checking if public key url exists")
 	if publicKeyUrl == "" {
 		return errors.New("public key url not provided")
 	}
 
-	log.Infoln("Fetching the public key content")
+	log.Infoln("fetching the public key content")
 	resp, err := http.Get(publicKeyUrl)
 	if err != nil {
 		log.Errorln(err)
@@ -160,10 +170,7 @@ func setPublicKey (publicKeyUrl string) error {
 	return nil
 }
 
-func StartHttpServer(port string, publicKey string, logger *log.Logger) error {
-	log.SetFormatter(logger.Formatter)
-	log.SetLevel(logger.Level)
-	log.SetOutput(logger.Out)
+func StartHttpServer(port string, publicKey string) error {
 	err := setPublicKey(publicKey)
 	if err != nil {return err}
 	r := GenerateMuxRouter(routes, middlewares)
