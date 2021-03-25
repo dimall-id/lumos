@@ -109,7 +109,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	} else {
 		resp := rr.Func(r)
 		log.Infof("process request return with status code %d\n", resp.StatusCode)
-		if resp.StatusCode != 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(resp.StatusCode)}
+		if resp.StatusCode == 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(resp.StatusCode)}
 		res = BuildJsonResponse(resp.Body)
 	}
 	log.WithField("Response Size", len(res)).Infof("done handling request for url \"%s\"", r.RequestURI)
