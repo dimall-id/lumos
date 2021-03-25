@@ -153,8 +153,8 @@ func setPublicKey (publicKeyUrl string) error {
 }
 
 func StartHttpServer(port string, publicKey string, logger *logrus.Logger) error {
-	err := setPublicKey(publicKey)
 	log = logger
+	err := setPublicKey(publicKey)
 	if err != nil {return err}
 	r := GenerateMuxRouter(routes, middlewares)
 	return http.ListenAndServe(port, r)
