@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 type AccessToken struct {
@@ -31,6 +32,9 @@ func (a *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
 
 func (a *AccessToken) Valid () error {
 	now := float64(time.Now().Unix())
+	log.Infof("Now : %d", now)
+	log.Infof("Iat : %d", a.Iat)
+	log.Infof("Exp : %d", a.Exp)
 	if now < a.Iat {return errors.New("can't use token before issue date")}
 	if now > a.Exp {return errors.New("can't use expired token")}
 	return nil

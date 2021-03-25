@@ -10,11 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var _publicKey []byte
-var log *logrus.Logger
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +102,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	if &err != nil {
 		log.Infoln("fail to check authorization")
 		w.WriteHeader(err.StatusCode)
-		res = BuildJsonResponse(err)
+		res = BuildJsonResponse(err.Body)
 	} else {
 		resp := rr.Func(r)
 		log.Infof("process request return with status code %d\n", resp.StatusCode)
@@ -162,8 +161,10 @@ func setPublicKey (publicKeyUrl string) error {
 	return nil
 }
 
-func StartHttpServer(port string, publicKey string, logger *logrus.Logger) error {
-	log = logger
+func StartHttpServer(port string, publicKey string, logger *log.Logger) error {
+	log.SetFormatter(logger.Formatter)
+	log.SetLevel(logger.Level)
+	log.SetOutput(logger.Out)
 	err := setPublicKey(publicKey)
 	if err != nil {return err}
 	r := GenerateMuxRouter(routes, middlewares)
