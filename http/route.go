@@ -7,13 +7,17 @@ import (
 	"strings"
 )
 
+type Response struct {
+	StatusCode int
+	Body interface{}
+}
+
 type Route struct {
 	Name string
 	HttpMethod string
-	StatusCode int
 	Url	string
 	Roles []string
-	Func func (r *http.Request) (interface{}, HttpError)
+	Func func (r *http.Request) Response
 }
 
 func (r *Route) IsValid() error {
@@ -26,9 +30,6 @@ func (r *Route) IsValid() error {
 	hm := "GETPOSTPUTPATCHDELETEOPTIONS"
 	if !strings.Contains(hm, r.HttpMethod) {
 		return errors.New(fmt.Sprintf("invalid http method provided, '%s'", r.HttpMethod))
-	}
-	if &r.StatusCode == nil {
-		return errors.New("status code of route is not provided")
 	}
 	if &r.Url == nil {
 		return errors.New("url of route is not provided")

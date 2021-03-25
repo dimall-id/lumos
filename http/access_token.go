@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/dimall-id/jwt-go"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -28,13 +28,10 @@ func (a *AccessToken) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (a *AccessToken) FromJwtBase64 (base64Token string) error {
-	token, err := jwt.ParseUnverified(base64Token, jwt.MapClaims{})
-	if err != nil {
-		return err
-	}
-	claims, _ := token.Claims.(jwt.MapClaims)
-	a.FillAccessToken(claims)
+func (a *AccessToken) Valid () error {
+	now := float64(time.Now().Unix())
+	if now < a.Iat {return errors.New("can't use token before issue date")}
+	if now > a.Exp {return errors.New("can't use expired token")}
 	return nil
 }
 

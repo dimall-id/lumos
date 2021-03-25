@@ -5,81 +5,92 @@ import (
 	"net/http"
 )
 
-type HttpError struct {
-	Code int `json:"code" msgpack:"code"`
-	Message string `json:"message" msgpack:"message"`
-	Errors map[string][]string `json:"errors,omitempty" msgpack:"errors,as_array,omitempty"`
-}
-
-func InternalServerError() HttpError {
-	return HttpError{
-		Code: http.StatusInternalServerError,
-		Message: "Internal Server Error",
-		Errors: nil,
+func InternalServerError(cause string) Response {
+	return Response{
+		StatusCode: http.StatusInternalServerError,
+		Body: map[string]interface{} {
+			"message" : "internal server error",
+			"cause" : cause,
+		},
 	}
 }
 
-func BadRequest() HttpError {
-	return HttpError{
-		Code: http.StatusBadRequest,
-		Message: "Bad Request",
-		Errors: nil,
+func BadRequest(cause string) Response {
+	return Response {
+		StatusCode: http.StatusBadRequest,
+		Body: map[string]interface{} {
+			"message" : "bad request",
+			"cause" : cause,
+		},
 	}
 }
 
-func Unauthorized() HttpError {
-	return HttpError{
-		Code: http.StatusUnauthorized,
-		Message: "Unauthorized",
-		Errors: nil,
+func Unauthorized(cause string) Response {
+	return Response {
+		StatusCode: http.StatusBadRequest,
+		Body: map[string]interface{} {
+			"message" : "unauthorized",
+			"cause" : cause,
+		},
 	}
 }
 
-func PaymentRequired() HttpError {
-	return HttpError{
-		Code: http.StatusPaymentRequired,
-		Message: "Payment Required",
-		Errors: nil,
+func PaymentRequired() Response {
+	return Response {
+		StatusCode: http.StatusPaymentRequired,
+		Body: map[string]interface{} {
+			"message" : "payment required",
+		},
 	}
 }
 
-func Forbidden() HttpError {
-	return HttpError{
-		Code: http.StatusForbidden,
-		Message: "Forbidden",
-		Errors: nil,
+func Forbidden(cause string) Response {
+	return Response {
+		StatusCode: http.StatusForbidden,
+		Body: map[string]interface{} {
+			"message" : "forbidden",
+			"cause" : cause,
+		},
 	}
 }
 
-func NotFound() HttpError {
-	return HttpError{
-		Code: http.StatusNotFound,
-		Message: "Not Found",
-		Errors: nil,
+func NotFound(cause string) Response {
+	return Response {
+		StatusCode: http.StatusNotFound,
+		Body: map[string]interface{} {
+			"message" : "not found",
+			"cause" : cause,
+		},
 	}
 }
 
-func MethodNotAllow() HttpError {
-	return HttpError{
-		Code: http.StatusMethodNotAllowed,
-		Message: "Method Not Allowed",
-		Errors: nil,
+func MethodNotAllow(cause string) Response {
+	return Response {
+		StatusCode: http.StatusMethodNotAllowed,
+		Body: map[string]interface{} {
+			"message" : "method not allowed",
+			"cause" : cause,
+		},
 	}
 }
 
-func UnprocessableEntity(errors map[string][]string) HttpError {
-	return HttpError{
-		Code: http.StatusUnprocessableEntity,
-		Message: "Unprocessable Entity",
-		Errors: errors,
+func UnprocessableEntity(errors map[string][]string) Response {
+	return Response{
+		StatusCode: http.StatusUnprocessableEntity,
+		Body: map[string]interface{} {
+			"message" : "unprocessable entity",
+			"errors" : errors,
+		},
 	}
 }
 
-func NotImplemented() HttpError {
-	return HttpError{
-		Code: http.StatusNotImplemented,
-		Message: "Not Implemented",
-		Errors: nil,
+func NotImplemented(cause string) Response {
+	return Response{
+		StatusCode: http.StatusNotImplemented,
+		Body: map[string]interface{} {
+			"message" : "unprocessable entity",
+			"cause" : cause,
+		},
 	}
 }
 

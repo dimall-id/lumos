@@ -3,35 +3,34 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/dimall-id/jwt-go"
 	"github.com/dimall-id/lumos/misc"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 )
 
+var _publicKey string
+
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := MethodNotAllow()
-		w.WriteHeader(err.Code)
-		res, _ := json.Marshal(err)
-		var dest bytes.Buffer
-		json.Compact(&dest, res)
+		err := MethodNotAllow("method is not allowed")
+		w.WriteHeader(err.StatusCode)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Write(dest.Bytes())
+		w.Write(BuildJsonResponse(err.Body))
 	})
 }
 
 func notFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := NotFound()
-		w.WriteHeader(err.Code)
-		res, _ := json.Marshal(err)
-		var dest bytes.Buffer
-		json.Compact(&dest, res)
+		err := NotFound("url is not found")
+		w.WriteHeader(err.StatusCode)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Write(dest.Bytes())
+		w.Write(BuildJsonResponse(err.Body))
 	})
 }
 
@@ -48,31 +47,29 @@ func CheckRole (roles []string, routes map[string]string) bool {
 /**
 @TODO : make unit testing
  */
-func CheckAuthorization(authentication string, rr Route) HttpError {
+func CheckAuthorization(authentication string, rr Route) Response {
 	roles := make(map[string]string)
 	for _, role := range rr.Roles {roles[role] = role}
-	if len(roles) <= 0 {return HttpError{}}
-	if _, oke := roles["ANONYMOUS"]; oke {return HttpError{}}
+	if len(roles) <= 0 {return Response{}}
+	if _, oke := roles["ANONYMOUS"]; oke {return Response{}}
 
 	if authentication == "" {
-		return Unauthorized()
+		return Unauthorized("authorization key is not provided in the header")
 	} else {
-		claims, err := GetTokenClaim(authentication)
-		if err != nil {return BadRequest()}
-		if !CheckRole(claims.Roles, roles) {return Unauthorized()}
+		var claims jwt.MapClaims
+		tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
+		_, err := jwt.ParseWithClaims(tokens["token"], claims, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
+		if err != nil {
+			vErr := err.(jwt.ValidationError)
+			return Forbidden(vErr.Error())
+		}
+		accessToken := AccessToken{}
+		accessToken.FillAccessToken(claims)
+		err = accessToken.Valid()
+		if err != nil {return Forbidden(err.Error())}
+		if !CheckRole(accessToken.Roles, roles) {return Unauthorized("user don't have role to access the resources")}
 	}
-	return HttpError{}
-}
-
-/**
-@TODO : make unit testing
- */
-func GetTokenClaim (authentication string) (AccessToken, error) {
-	tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-	t := AccessToken{}
-	err := t.FromJwtBase64(tokens["token"])
-	if err != nil {return AccessToken{}, err}
-	return t, nil
+	return Response{}
 }
 
 func BuildJsonResponse (response interface{}) []byte {
@@ -85,17 +82,13 @@ func BuildJsonResponse (response interface{}) []byte {
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 	var res []byte
 	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
-	if err.Message != "" {
+	if &err != nil {
+		w.WriteHeader(err.StatusCode)
 		res = BuildJsonResponse(err)
 	} else {
-		data, err := rr.Func(r)
-		if err.Message != "" {
-			w.WriteHeader(err.Code)
-			res = BuildJsonResponse(err)
-		} else {
-			if rr.StatusCode == 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(rr.StatusCode)}
-			res = BuildJsonResponse(data)
-		}
+		resp := rr.Func(r)
+		if resp.StatusCode != 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(resp.StatusCode)}
+		res = BuildJsonResponse(resp.Body)
 	}
 	w.Write(res)
 }
@@ -122,7 +115,22 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	return r
 }
 
-func StartHttpServer(port string) error {
+func setPublicKey (publicKeyUrl string) error {
+	if publicKeyUrl == "" {return errors.New("public key url not provided")}
+
+	resp, err := http.Get(publicKeyUrl)
+	if err != nil {return errors.New("fail to consume public key url")}
+
+	byte, err := ioutil.ReadAll(resp.Body)
+	if err != nil {return errors.New("fail to read http response")}
+
+	_publicKey = string(byte)
+	return nil
+}
+
+func StartHttpServer(port string, publicKey string) error {
+	err := setPublicKey(publicKey)
+	if err != nil {return err}
 	r := GenerateMuxRouter(routes, middlewares)
 	return http.ListenAndServe(port, r)
 }
