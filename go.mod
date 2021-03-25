@@ -1,4 +1,4 @@
-module github.com/dimall-id/lumos
+module github.com/dimall-id/lumos/v2
 
 go 1.15
 
