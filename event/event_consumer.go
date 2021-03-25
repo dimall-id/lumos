@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/segmentio/kafka-go"
 	"log"
-	"strings"
 )
 
 type ExistingCallbackError struct {
@@ -72,28 +71,6 @@ func RemoveCallback (topic string) error {
 type ConsumerConfig struct {
 	ConsumerGroupId  string
 	Brokers []string
-}
-func NewConsumerConfig (Broker string, ConsumerGroupId string) ConsumerConfig {
-	Brokers := strings.Split(Broker, ",")
-	return ConsumerConfig{
-		Brokers: Brokers,
-		ConsumerGroupId: ConsumerGroupId,
-	}
-}
-func newKafkaConsumerGroupConfig (config ConsumerConfig, topics []string) kafka.ConsumerGroupConfig {
-	return kafka.ConsumerGroupConfig{
-		Brokers: config.Brokers,
-		ID: config.ConsumerGroupId,
-		Topics: topics,
-	}
-}
-func newKafkaReadConfig(config ConsumerConfig, topic string, partition int) kafka.ReaderConfig {
-	c := kafka.ReaderConfig{
-		Brokers: config.Brokers,
-		Topic: topic,
-		Partition: partition,
-	}
-	return c
 }
 
 func StartConsumers (config ConsumerConfig) error {
