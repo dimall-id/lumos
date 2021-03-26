@@ -76,3 +76,20 @@ func (a *AccessToken) FillAccessToken (data map[string]interface{}) {
 		a.Roles = roles
 	}
 }
+
+func (r *AccessToken) ToMapClaims () jwt.MapClaims {
+	roles := make([]string, len(r.Roles))
+	for i, role := range r.Roles {roles[i] = role}
+	return jwt.MapClaims{
+		"jti" : r.Jti,
+		"user_id" : r.UserId,
+		"ref_id" : r.RefId,
+		"email" : r.Email,
+		"phone_no" : r.PhoneNo,
+		"user_name" : r.UserName,
+		"user_type" : r.UserType,
+		"roles" : roles,
+		"iat" : r.Iat,
+		"exp" : r.Exp,
+	}
+}
