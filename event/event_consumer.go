@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 

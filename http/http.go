@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dimall-id/jwt-go"
-	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/dimall-id/lumos/v2/misc"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
