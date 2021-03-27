@@ -50,3 +50,14 @@ func (r *RefreshToken) FillRefreshToken (data map[string]interface{}) {
 		r.UserId = val.(string)
 	}
 }
+
+func (r *RefreshToken) ToMapClaims () jwt.MapClaims {
+	return jwt.MapClaims{
+		"rti" : r.Rti,
+		"jti" : r.Jti,
+		"user_id" : r.UserId,
+		"is_claimed" : r.IsClaimed,
+		"iat" : r.Iat,
+		"exp" : r.Exp,
+	}
+}

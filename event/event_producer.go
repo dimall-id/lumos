@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/google/uuid"
+	"github.com/segmentio/kafka-go"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"strings"
 	"time"
-	"github.com/segmentio/kafka-go"
 )
 
 type Config struct {
