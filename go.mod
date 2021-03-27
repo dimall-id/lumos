@@ -3,6 +3,7 @@ module github.com/dimall-id/lumos/v2
 go 1.15
 
 require (
+	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
 	github.com/dimall-id/jwt-go v1.0.1
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0

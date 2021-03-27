@@ -2,16 +2,39 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	"strings"
 	"time"
 )
 
 var config = viper.New()
 
-func InitConfig (filename string, path string) error {
-	config.SetConfigName(filename)
-	config.AddConfigPath(path)
-	err := config.ReadInConfig()
-	return err
+func InitConfig (env string) error {
+	if strings.ToUpper(env) == "DEBUG" {
+		config.SetConfigName("config")
+		config.AddConfigPath(".")
+		err := config.ReadInConfig()
+		return err
+	} else {
+		viper.SetEnvKeyReplacer(strings.NewReplacer(".","_"))
+		viper.SetEnvPrefix("DIMALL")
+		viper.SetDefault("etcd.host", "http://localhost:4001")
+		viper.AutomaticEnv()
+
+		config.Set("service.name", viper.GetString("service.name"))
+		config.Set("db.host", viper.GetString("db.host"))
+		config.Set("db.username", viper.GetString("db.username"))
+		config.Set("db.password", viper.GetString("db.password"))
+		config.Set("db.database", viper.GetString("db.database"))
+		config.Set("etcd.host", viper.GetString("etcd.host"))
+		config.Set("etcd.path", viper.GetString("etcd.path"))
+		config.Set("etcd.type", viper.GetString("etcd.type"))
+
+		err := config.AddRemoteProvider("etcd", config.GetString("etcd.host"), config.GetString("etcd.path"))
+		if err != nil {return err}
+		config.SetConfigFile(config.GetString("etcd.type"))
+		err = config.ReadRemoteConfig()
+		return err
+	}
 }
 
 func WatchConfig() {
