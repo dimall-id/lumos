@@ -5,6 +5,7 @@ import (
 	_ "github.com/spf13/viper/remote"
 	"strings"
 	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 var config = viper.New()
@@ -30,8 +31,13 @@ func InitConfig (env string) error {
 		config.Set("etcd.path", viper.GetString("etcd.path"))
 		config.Set("etcd.type", viper.GetString("etcd.type"))
 
+		log.Infoln("ETCD HOST", config.GetString("etcd.host"))
+		log.Infoln("ETCD PATH", config.GetString("etcd.path"))
 		err := config.AddRemoteProvider("etcd", config.GetString("etcd.host"), config.GetString("etcd.path"))
-		if err != nil {return err}
+		if err != nil {
+			log.Errorln(err)
+			return err
+		}
 		config.SetConfigFile(config.GetString("etcd.type"))
 		err = config.ReadRemoteConfig()
 		return err
