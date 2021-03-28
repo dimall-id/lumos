@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 	"strings"
 	"time"
 )
