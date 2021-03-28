@@ -17,7 +17,7 @@ func InitConfig (env string) error {
 	} else {
 		viper.SetEnvKeyReplacer(strings.NewReplacer(".","_"))
 		viper.SetEnvPrefix("DIMALL")
-		viper.SetDefault("etcd.host", "http://localhost:4001")
+		viper.SetDefault("etcd.host", "http://localhost:2379")
 		viper.AutomaticEnv()
 
 		config.Set("service.name", viper.GetString("service.name"))
