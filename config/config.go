@@ -1,11 +1,13 @@
 package config
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/viper"
-	_ "github.com/spf13/viper/remote"
 	"strings"
 	"time"
-	log "github.com/sirupsen/logrus"
 )
 
 var config = viper.New()
@@ -31,17 +33,28 @@ func InitConfig (env string) error {
 		config.Set("etcd.path", viper.GetString("etcd.path"))
 		config.Set("etcd.type", viper.GetString("etcd.type"))
 
-		log.Infoln("ETCD HOST", config.GetString("etcd.host"))
-		log.Infoln("ETCD PATH", config.GetString("etcd.path"))
-		err := config.AddRemoteProvider("etcd", config.GetString("etcd.host"), config.GetString("etcd.path"))
-		if err != nil {
-			log.Errorln(err)
-			return err
-		}
-		config.SetConfigFile(config.GetString("etcd.type"))
-		err = config.ReadRemoteConfig()
+		remoteConfig, err := readEtcdRemoteConfig()
+		config.SetConfigType("json")
+		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
 		return err
 	}
+}
+
+func readEtcdRemoteConfig() ([]byte, error) {
+	endpoint := config.GetString("etcd.hosts")
+	endpoints := strings.Split(endpoint, ",")
+
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints: endpoints,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {return nil, err}
+	defer cli.Close()
+
+	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
+	var data map[string]interface{}
+	json.Unmarshal(value.Kvs[0].Value, &data)
+	return json.Marshal(data)
 }
 
 func WatchConfig() {
