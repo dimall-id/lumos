@@ -56,7 +56,7 @@ func readEtcdRemoteConfig() ([]byte, error) {
 
 	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
-	if err == nil {
+	if err != nil {
 		log.Errorln(err)
 		return nil, err
 	}
