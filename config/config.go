@@ -41,6 +41,7 @@ func InitConfig (env string) error {
 		fmt.Println(remoteConfig)
 		config.SetConfigType(config.GetString("etcd.type"))
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
+		fmt.Println(config.GetString("http.public_key"))
 		return err
 	}
 }
