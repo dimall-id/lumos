@@ -127,7 +127,7 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 
 func StartProducer (config Config) error {
 	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
 		config.DatasourceConfig.Host,
 		config.DatasourceConfig.User,
 		config.DatasourceConfig.Password,
