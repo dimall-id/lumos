@@ -132,8 +132,7 @@ func StartProducer (config Config) error {
 		config.DatasourceConfig.User,
 		config.DatasourceConfig.Password,
 		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port,
-		config.DatasourceConfig.SslMode)
+		config.DatasourceConfig.Port)
 
 	log.Info("starting DB connection")
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
