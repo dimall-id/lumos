@@ -30,7 +30,7 @@ func InitConfig (env string) error {
 		config.Set("db.username", viper.GetString("db.username"))
 		config.Set("db.password", viper.GetString("db.password"))
 		config.Set("db.database", viper.GetString("db.database"))
-		config.Set("etcd.host", viper.GetString("etcd.host"))
+		config.Set("etcd.hosts", viper.GetString("etcd.hosts"))
 		config.Set("etcd.path", viper.GetString("etcd.path"))
 		config.Set("etcd.type", viper.GetString("etcd.type"))
 
