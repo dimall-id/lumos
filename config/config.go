@@ -27,6 +27,7 @@ func InitConfig (env string) error {
 
 		config.Set("service.name", viper.GetString("service.name"))
 		config.Set("db.host", viper.GetString("db.host"))
+		config.Set("db.port", viper.GetString("db.port"))
 		config.Set("db.username", viper.GetString("db.username"))
 		config.Set("db.password", viper.GetString("db.password"))
 		config.Set("db.database", viper.GetString("db.database"))
@@ -37,7 +38,6 @@ func InitConfig (env string) error {
 		remoteConfig, err := readEtcdRemoteConfig()
 		if err != nil {return err}
 		config.SetConfigType(config.GetString("etcd.type"))
-		log.Info(remoteConfig)
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
 		return err
 	}
@@ -60,14 +60,14 @@ func readEtcdRemoteConfig() ([]byte, error) {
 		log.Errorln(err)
 		return nil, err
 	}
-	log.Info(value.Kvs[0].Value)
+	log.Info("unmarshal data to map")
 	var data map[string]interface{}
 	err = json.Unmarshal(value.Kvs[0].Value, &data)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
 	}
-	log.Info(data)
+	log.Info("marshal map to string json")
 	return json.Marshal(data)
 }
 

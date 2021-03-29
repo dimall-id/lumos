@@ -156,7 +156,7 @@ func StartProducer (config Config) error {
 
 	var messages []LumosOutbox
 	for {
-		log.Info("fetching message with status QUQUE")
+		log.Info("fetching message with status QUEUE")
 		db.Where("status = ?", "QUEUE").Find(&messages)
 		log.Infof("processing %d amount of message", len(messages))
 		if len(messages) > 0 {
