@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -58,10 +57,10 @@ func readEtcdRemoteConfig() ([]byte, error) {
 	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
 	if err == nil {return nil, err}
-	fmt.Println(value.Kvs[0].Value)
+	log.Info(value.Kvs[0].Value)
 	var data map[string]interface{}
 	json.Unmarshal(value.Kvs[0].Value, &data)
-	fmt.Println(data)
+	log.Info(data)
 	return json.Marshal(data)
 }
 
