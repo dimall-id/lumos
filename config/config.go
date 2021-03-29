@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/coreos/etcd/clientv3"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
 	"time"
@@ -37,6 +37,7 @@ func InitConfig (env string) error {
 		remoteConfig, err := readEtcdRemoteConfig()
 		if err != nil {return err}
 		config.SetConfigType(config.GetString("etcd.type"))
+		log.Info(remoteConfig)
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
 		return err
 	}
@@ -44,9 +45,8 @@ func InitConfig (env string) error {
 
 func readEtcdRemoteConfig() ([]byte, error) {
 	endpoint := config.GetString("etcd.hosts")
-	fmt.Println(endpoint)
 	endpoints := strings.Split(endpoint, ",")
-	fmt.Println(endpoints)
+	log.Infof("connecting to ectd cluster %s", endpoints)
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: endpoints,
 		DialTimeout: 5 * time.Second,
@@ -54,6 +54,7 @@ func readEtcdRemoteConfig() ([]byte, error) {
 	if err != nil {return nil, err}
 	defer cli.Close()
 
+	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
 	if err == nil {return nil, err}
 	var data map[string]interface{}
