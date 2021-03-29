@@ -34,7 +34,8 @@ func InitConfig (env string) error {
 		config.Set("etcd.type", viper.GetString("etcd.type"))
 
 		remoteConfig, err := readEtcdRemoteConfig()
-		config.SetConfigType("json")
+		if err != nil {return err}
+		config.SetConfigType(config.GetString("etcd.type"))
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
 		return err
 	}
@@ -52,6 +53,7 @@ func readEtcdRemoteConfig() ([]byte, error) {
 	defer cli.Close()
 
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
+	if err == nil {return nil, err}
 	var data map[string]interface{}
 	json.Unmarshal(value.Kvs[0].Value, &data)
 	return json.Marshal(data)
