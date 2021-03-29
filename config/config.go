@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/viper"
 	"strings"
@@ -43,8 +44,9 @@ func InitConfig (env string) error {
 
 func readEtcdRemoteConfig() ([]byte, error) {
 	endpoint := config.GetString("etcd.hosts")
+	fmt.Println(endpoint)
 	endpoints := strings.Split(endpoint, ",")
-
+	fmt.Println(endpoints)
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: endpoints,
 		DialTimeout: 5 * time.Second,
