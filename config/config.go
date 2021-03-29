@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -59,6 +60,7 @@ func readEtcdRemoteConfig() ([]byte, error) {
 	if err == nil {return nil, err}
 	var data map[string]interface{}
 	json.Unmarshal(value.Kvs[0].Value, &data)
+	fmt.Println(data)
 	return json.Marshal(data)
 }
 
