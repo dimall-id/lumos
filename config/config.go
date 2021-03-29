@@ -56,10 +56,17 @@ func readEtcdRemoteConfig() ([]byte, error) {
 
 	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
-	if err == nil {return nil, err}
+	if err == nil {
+		log.Errorln(err)
+		return nil, err
+	}
 	log.Info(value.Kvs[0].Value)
 	var data map[string]interface{}
-	json.Unmarshal(value.Kvs[0].Value, &data)
+	err = json.Unmarshal(value.Kvs[0].Value, &data)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
 	log.Info(data)
 	return json.Marshal(data)
 }
