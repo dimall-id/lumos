@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -37,6 +38,7 @@ func InitConfig (env string) error {
 
 		remoteConfig, err := readEtcdRemoteConfig()
 		if err != nil {return err}
+		fmt.Println(remoteConfig)
 		config.SetConfigType(config.GetString("etcd.type"))
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
 		return err
