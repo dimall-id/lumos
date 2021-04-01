@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -38,10 +37,8 @@ func InitConfig (env string) error {
 
 		remoteConfig, err := readEtcdRemoteConfig()
 		if err != nil {return err}
-		fmt.Println(remoteConfig)
 		config.SetConfigType(config.GetString("etcd.type"))
 		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
-		fmt.Println(config.GetString("http.public_key"))
 		return err
 	}
 }
@@ -55,7 +52,12 @@ func readEtcdRemoteConfig() ([]byte, error) {
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {return nil, err}
-	defer cli.Close()
+	defer func () {
+		err = cli.Close()
+		if err != nil {
+			log.Errorf("fail to close etcd client due to %s", err)
+		}
+	}()
 
 	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
 	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
