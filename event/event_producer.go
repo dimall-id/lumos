@@ -127,13 +127,12 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 
 func StartProducer (config Config) error {
 	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC sslmode=%s",
+		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
 		config.DatasourceConfig.Host,
 		config.DatasourceConfig.User,
 		config.DatasourceConfig.Password,
 		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port,
-		config.DatasourceConfig.SslMode)
+		config.DatasourceConfig.Port)
 
 	log.Info("starting DB connection")
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
@@ -156,7 +155,7 @@ func StartProducer (config Config) error {
 
 	var messages []LumosOutbox
 	for {
-		log.Info("fetching message with status QUQUE")
+		log.Info("fetching message with status QUEUE")
 		db.Where("status = ?", "QUEUE").Find(&messages)
 		log.Infof("processing %d amount of message", len(messages))
 		if len(messages) > 0 {

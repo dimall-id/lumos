@@ -3,6 +3,8 @@ module github.com/dimall-id/lumos/v2
 go 1.15
 
 require (
+	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
+	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/dimall-id/jwt-go v1.0.1
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
@@ -11,6 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0 // indirect
+	google.golang.org/grpc v1.26.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gorm.io/driver/postgres v1.0.8

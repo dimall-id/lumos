@@ -1,17 +1,77 @@
 package config
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/coreos/etcd/clientv3"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"strings"
 	"time"
 )
 
 var config = viper.New()
 
-func InitConfig (filename string, path string) error {
-	config.SetConfigName(filename)
-	config.AddConfigPath(path)
-	err := config.ReadInConfig()
-	return err
+func InitConfig (env string) error {
+	if strings.ToUpper(env) == "DEBUG" {
+		config.SetConfigName("config")
+		config.AddConfigPath(".")
+		err := config.ReadInConfig()
+		return err
+	} else {
+		viper.SetEnvKeyReplacer(strings.NewReplacer(".","_"))
+		viper.SetEnvPrefix("DIMALL")
+		viper.SetDefault("etcd.host", "http://localhost:2379")
+		viper.AutomaticEnv()
+
+		config.Set("service.name", viper.GetString("service.name"))
+		config.Set("db.host", viper.GetString("db.host"))
+		config.Set("db.port", viper.GetString("db.port"))
+		config.Set("db.username", viper.GetString("db.username"))
+		config.Set("db.password", viper.GetString("db.password"))
+		config.Set("db.database", viper.GetString("db.database"))
+		config.Set("etcd.hosts", viper.GetString("etcd.hosts"))
+		config.Set("etcd.path", viper.GetString("etcd.path"))
+		config.Set("etcd.type", viper.GetString("etcd.type"))
+
+		remoteConfig, err := readEtcdRemoteConfig()
+		if err != nil {return err}
+		fmt.Println(remoteConfig)
+		config.SetConfigType(config.GetString("etcd.type"))
+		err = config.ReadConfig(bytes.NewBuffer(remoteConfig))
+		fmt.Println(config.GetString("http.public_key"))
+		return err
+	}
+}
+
+func readEtcdRemoteConfig() ([]byte, error) {
+	endpoint := config.GetString("etcd.hosts")
+	endpoints := strings.Split(endpoint, ",")
+	log.Infof("connecting to ectd cluster %s", endpoints)
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints: endpoints,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {return nil, err}
+	defer cli.Close()
+
+	log.Infof("fetch key/value from path, %s", config.GetString("etcd.path"))
+	value, err := cli.KV.Get(context.Background(), config.GetString("etcd.path"))
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+	log.Info("unmarshal data to map")
+	var data map[string]interface{}
+	err = json.Unmarshal(value.Kvs[0].Value, &data)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+	log.Info("marshal map to string json")
+	return json.Marshal(data)
 }
 
 func WatchConfig() {
