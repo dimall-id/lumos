@@ -2,13 +2,11 @@ package http
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/dimall-id/jwt-go"
 	"github.com/dimall-id/lumos/v2/misc"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -63,7 +61,6 @@ func CheckAuthorization(authentication string, rr Route) Response {
 	}
 
 	if authentication == "" {
-		log.WithField("User-Id", "")
 		log.Infof("authorization key if not provided in the header")
 		return Unauthorized("authorization key is not provided in the header")
 	} else {
@@ -79,7 +76,6 @@ func CheckAuthorization(authentication string, rr Route) Response {
 		log.Infof("parsing token claim to AcessToken")
 		accessToken := AccessToken{}
 		accessToken.FillAccessToken(claims.Claims.(jwt.MapClaims))
-		log.WithField("User-Id", accessToken.UserId)
 		log.Infof("checking issued at and expired at")
 		err = accessToken.Valid()
 		if err != nil {
@@ -102,9 +98,6 @@ func BuildJsonResponse (response interface{}) []byte {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
-	reqId := uuid.New().String()
-	r.WithContext(context.WithValue(r.Context(), "X-Req-Id", reqId))
-	log.WithField("X-Req-Id", reqId)
 	var res []byte
 	log.Infof("start handling request for url %s", r.RequestURI)
 	log.Infoln("checking the authorization")
@@ -140,6 +133,8 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
+	log.Info("registering req id middleware")
+	r.Use(ReqIdMiddleware)
 	log.Info("registering content type middleware")
 	r.Use(ContentTypeMiddleware)
 	log.Info("registering jwt middleware")

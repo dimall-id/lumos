@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"github.com/dimall-id/lumos/v2/misc"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -19,8 +20,10 @@ func JwtTokenMiddleware (next http.Handler) http.Handler {
 		if r.Header.Get("Authorization") != "" {
 			claims, err := GetTokenClaim(r.Header.Get("Authorization"))
 			if err != nil {
+				log.WithField("User-Id", "")
 				next.ServeHTTP(w, r)
 			} else {
+				log.WithField("User-Id", claims.UserId)
 				ctx := context.WithValue(r.Context(), "Auth", claims)
 				next.ServeHTTP(w, r.WithContext(ctx))
 			}
