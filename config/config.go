@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/coreos/etcd/clientv3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"go.etcd.io/etcd/client/v3"
 	"strings"
 	"time"
 )
