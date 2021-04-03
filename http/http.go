@@ -133,8 +133,6 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
-	log.Info("registering req id middleware")
-	r.Use(ReqIdMiddleware)
 	log.Info("registering content type middleware")
 	r.Use(ContentTypeMiddleware)
 	log.Info("registering jwt middleware")
