@@ -43,6 +43,10 @@ func InitLog (level string) {
 	SetOutput(os.Stdout)
 }
 
+func GetLogger() *logrus.Logger {
+	return std.Logger
+}
+
 func AddField (key string, value interface{}) {
 	std = std.WithField(key, value)
 }
