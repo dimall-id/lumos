@@ -3,7 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"

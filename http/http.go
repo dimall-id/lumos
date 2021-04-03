@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dimall-id/jwt-go"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/dimall-id/lumos/v2/misc"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -133,8 +133,8 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
-	log.Info("registering req id middleware")
-	r.Use(ReqIdMiddleware)
+	log.Info("registering session id middleware")
+	r.Use(SessionIdMiddleware)
 	log.Info("registering content type middleware")
 	r.Use(ContentTypeMiddleware)
 	log.Info("registering jwt middleware")

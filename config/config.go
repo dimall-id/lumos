@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
+	log "github.com/dimall-id/lumos/v2/logger"
 	"github.com/spf13/viper"
 	"go.etcd.io/etcd/client/v3"
 	"strings"
