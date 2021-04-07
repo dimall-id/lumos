@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"testing"
@@ -65,7 +66,7 @@ func TestInvalidRouteError_Error(t *testing.T) {
 		Name: "Name Product",
 		HttpMethod: "GET",
 		Url: "/products",
-		Func: func(r *http.Request) Response {
+		Func: func(r *http.Request, logger *logrus.Entry) Response {
 			return Response{}
 		},
 	}
@@ -82,7 +83,7 @@ func TestExistingRouteError_Error(t *testing.T) {
 		Name: "Name Product",
 		HttpMethod: "GET",
 		Url: "/products",
-		Func: func(r *http.Request) Response {
+		Func: func(r *http.Request, logger *logrus.Entry) Response {
 			return Response{}
 		},
 	}

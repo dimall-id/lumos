@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -27,7 +28,7 @@ func TestRoute_IsValid(t *testing.T) {
 			route: Route{
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -39,7 +40,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GETS",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -51,7 +52,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GETS",
 				Url: "/pro du cts",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 			},
@@ -68,7 +69,7 @@ func TestRoute_IsValid(t *testing.T) {
 		{
 			route: Route{
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 			},
@@ -79,7 +80,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "POST",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -91,7 +92,7 @@ func TestRoute_IsValid(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "POST",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{},
@@ -148,7 +149,7 @@ func TestAddRoute(t *testing.T) {
 			Name: "Product List",
 			HttpMethod: "POST",
 			Url: "/products",
-			Func: func(r *http.Request) Response {
+			Func: func(r *http.Request, logger *logrus.Entry) Response {
 				return Response{}
 			},
 			Roles: []string{"USER"},
@@ -175,7 +176,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 			},
@@ -189,7 +190,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -198,7 +199,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name: "Product List",
 				HttpMethod: "GET",
 				Url: "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -212,7 +213,7 @@ func TestAddAllRoute(t *testing.T) {
 			Name: "Product List",
 			HttpMethod: "GET",
 			Url: "/products",
-			Func: func(r *http.Request) Response {
+			Func: func(r *http.Request, logger *logrus.Entry) Response {
 				return Response{}
 			},
 			Roles: []string{"USER"},
@@ -223,7 +224,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product List",
 				HttpMethod: "GET",
 				Url:        "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -238,7 +239,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Add",
 				HttpMethod: "POST",
 				Url:        "/products",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -247,7 +248,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Delete",
 				HttpMethod: "DELETE",
 				Url:        "/products/{id}",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -256,7 +257,7 @@ func TestAddAllRoute(t *testing.T) {
 				Name:       "Product Update",
 				HttpMethod: "PUT",
 				Url:        "/products/{id}",
-				Func: func(r *http.Request) Response {
+				Func: func(r *http.Request, logger *logrus.Entry) Response {
 					return Response{}
 				},
 				Roles: []string{"USER"},
@@ -274,7 +275,7 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Add",
 			HttpMethod: "POST",
 			Url:        "/products",
-			Func: func(r *http.Request) Response {
+			Func: func(r *http.Request, logger *logrus.Entry) Response {
 				return Response{}
 			},
 			Roles: []string{"USER"},
@@ -283,7 +284,7 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Delete",
 			HttpMethod: "DELETE",
 			Url:        "/products/{id}",
-			Func: func(r *http.Request) Response {
+			Func: func(r *http.Request, logger *logrus.Entry) Response {
 				return Response{}
 			},
 			Roles: []string{"USER"},
@@ -292,7 +293,7 @@ func TestGetRoute(t *testing.T) {
 			Name:       "Product Update",
 			HttpMethod: "PUT",
 			Url:        "/products/{id}",
-			Func: func(r *http.Request) Response {
+			Func: func(r *http.Request, logger *logrus.Entry) Response {
 				return Response{}
 			},
 			Roles: []string{"USER"},

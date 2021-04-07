@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 )
+
 func InitLog (level string) {
 	formatter := runtime.Formatter{ChildFormatter: &log.JSONFormatter{}}
 	formatter.File = true
