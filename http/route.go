@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
@@ -19,7 +18,7 @@ type Route struct {
 	HttpMethod string
 	Url	string
 	Roles []string
-	Func func (r *http.Request) Response
+	Func func (r *http.Request, logger *logrus.Entry) Response
 }
 
 func (r *Route) toFieldMaps() logrus.Fields {
@@ -72,24 +71,24 @@ func isExist (route Route) (bool, int) {
 }
 
 func AddRoute (route Route) error {
-	log.Info("checking existing route")
+	logrus.Info("checking existing route")
 	if oke,_ := isExist(route); oke {
-		log.Warn("existing routes has been found")
+		logrus.Warn("existing routes has been found")
 		return &ExistingRouteError{route: route}
 	}
-	log.Info("checking route is valid")
+	logrus.Info("checking route is valid")
 	if err := route.IsValid(); err != nil {
-		log.Errorf("route is not valid due to %s", err.Error())
+		logrus.Errorf("route is not valid due to %s", err.Error())
 		return &InvalidRouteError{route: route}
 	} else {
-		log.Info("appending new route")
+		logrus.Info("appending new route")
 		routes = append(routes, route)
 		return nil
 	}
 }
 
 func AddAllRoute (rs []Route) error {
-	log.Info("checking if double route exist")
+	logrus.Info("checking if double route exist")
 	for i, r1 := range rs {
 		for j, r2 := range rs {
 			if i != j && r1.Equal(r2) {
@@ -98,18 +97,18 @@ func AddAllRoute (rs []Route) error {
 		}
 	}
 	for _,route := range rs {
-		log.Info("checking existing route")
+		logrus.Info("checking existing route")
 		if oke,_ := isExist(route); oke {
-			log.Warn("existing routes has been found")
+			logrus.Warn("existing routes has been found")
 			return &ExistingRouteError{route: route}
 		}
-		log.Info("checking route is valid")
+		logrus.Info("checking route is valid")
 		if err := route.IsValid(); err != nil {
-			log.Errorf("route is not valid due to %s", err.Error())
+			logrus.Errorf("route is not valid due to %s", err.Error())
 			return &InvalidRouteError{route: route}
 		}
 	}
-	log.Info("appending new routes")
+	logrus.Info("appending new routes")
 	routes = append(routes, rs...)
 	return nil
 }

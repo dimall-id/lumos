@@ -8,7 +8,7 @@ import (
 )
 
 func InitLog (level string) {
-	formatter := runtime.Formatter{ChildFormatter: &log.TextFormatter{}}
+	formatter := runtime.Formatter{ChildFormatter: &log.JSONFormatter{}}
 	formatter.File = true
 	formatter.Line = true
 	log.SetFormatter(&formatter)

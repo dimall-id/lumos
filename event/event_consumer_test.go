@@ -1,11 +1,12 @@
 package event
 
 import (
+	"github.com/sirupsen/logrus"
 	"testing"
 )
 
 func TestAddCallback(t *testing.T) {
-	err := AddCallback("COMMAND_EVENT", func(message ConsumerMessage) error {
+	err := AddCallback("COMMAND_EVENT", func(message ConsumerMessage, logger *logrus.Entry) error {
 		return nil
 	})
 
@@ -13,7 +14,7 @@ func TestAddCallback(t *testing.T) {
 		t.Error("Fail to test, Add Callback return error")
 	}
 
-	err = AddCallback("COMMAND_EVENT", func(message ConsumerMessage) error {
+	err = AddCallback("COMMAND_EVENT", func(message ConsumerMessage, logger *logrus.Entry) error {
 		return nil
 	})
 

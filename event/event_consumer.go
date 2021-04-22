@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/segmentio/kafka-go"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -49,7 +48,7 @@ func GenerateConsumerMessage (message kafka.Message) (ConsumerMessage, error) {
 		Value: value["data"],
 	}, nil
 }
-type Callback func(message ConsumerMessage) error
+type Callback func(message ConsumerMessage, logger *log.Entry) error
 
 var callbacks = make(map[string]Callback)
 func AddCallback (topic string, callback Callback) error {
@@ -107,21 +106,21 @@ func StartConsumers (config ConsumerConfig) error {
 			log.Errorf("error in converting data from kafka.message to ConsumerMessage %s", err.Error())
 			continue
 		}
-		log.WithFields(logrus.Fields{
+		logger := log.WithFields(log.Fields{
 			"topic" : message.Topic,
 			"partition" : m.Partition,
 			"offset" : m.Offset,
 			"message_id" : message.MessageId,
-		}).Infof("fetching message from broker")
+		})
 		if callback, oke := callbacks[message.Topic]; oke {
-			err := callback(message)
+			err := callback(message, logger)
 			if err != nil {
-				log.Errorf("event callback fail to finish it job due to %s", err.Error())
+				logger.Errorf("event callback fail to finish it job due to %s", err.Error())
 				continue
 			}
 			err = r.CommitMessages(context.Background(), m)
 			if err != nil {
-				log.Errorf("fail to commit message due to %s", err.Error())
+				logger.Errorf("fail to commit message due to %s", err.Error())
 			}
 		} else {
 			log.Errorf("no callback for topic '%s' found", message.Topic)

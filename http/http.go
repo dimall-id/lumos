@@ -48,41 +48,41 @@ func CheckRole (roles []string, routes map[string]string) bool {
 /**
 @TODO : make unit testing
  */
-func CheckAuthorization(authentication string, rr Route) Response {
-	log.Infoln("converting array of role to may of roles")
+func CheckAuthorization(authentication string, rr Route, logger *log.Entry) Response {
+	logger.Infoln("converting array of role to may of roles")
 	roles := make(map[string]string)
 	for _, role := range rr.Roles {roles[role] = role}
-	log.Infof("checking the len of roles in routes. len = %d", len(roles))
+	logger.Infof("checking the len of roles in routes. len = %d", len(roles))
 	if len(roles) <= 0 {return Response{}}
-	log.Infof("checking if roles has ANONYMOUS role")
+	logger.Infof("checking if roles has ANONYMOUS role")
 	if _, oke := roles["ANONYMOUS"]; oke {
-		log.Infof("routes contains ANONYMOUS role")
+		logger.Infof("routes contains ANONYMOUS role")
 		return Response{}
 	}
 
 	if authentication == "" {
-		log.Infof("authorization key if not provided in the header")
+		logger.Infof("authorization key if not provided in the header")
 		return Unauthorized("authorization key is not provided in the header")
 	} else {
-		log.Infof("parsing and validating the jwt token signature")
+		logger.Infof("parsing and validating the jwt token signature")
 		tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
 		claims, err := jwt.ParseWithClaims(tokens["token"], jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
 		if err != nil {
-			log.Infof("fail to validate the jwt token signature")
-			log.Error(err)
+			logger.Infof("fail to validate the jwt token signature")
+			logger.Error(err)
 			vErr := err.(*jwt.ValidationError)
 			return Forbidden(vErr.Error())
 		}
-		log.Infof("parsing token claim to AcessToken")
+		logger.Infof("parsing token claim to AcessToken")
 		accessToken := AccessToken{}
 		accessToken.FillAccessToken(claims.Claims.(jwt.MapClaims))
-		log.Infof("checking issued at and expired at")
+		logger.Infof("checking issued at and expired at")
 		err = accessToken.Valid()
 		if err != nil {
-			log.Errorf("invalid access token due to %s", err.Error())
+			logger.Errorf("invalid access token due to %s", err.Error())
 			return Forbidden(fmt.Sprintf("invalid access token due to %s", err.Error()))
 		}
-		log.Infof("checking role of user vs route role")
+		logger.Infof("checking role of user vs route role")
 		if !CheckRole(accessToken.Roles, roles) {
 			return Unauthorized("user don't have role to access the resources")
 		}
@@ -98,22 +98,31 @@ func BuildJsonResponse (response interface{}) []byte {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
+	fields := map[string]interface{}{}
+	if r.Context().Value("LoggerFields") != nil {
+		fields = r.Context().Value("LoggerFields").(map[string]interface{})
+	}
+
+	logger := log.WithFields(fields)
 	var res []byte
-	log.Infof("start handling request for url %s", r.RequestURI)
-	log.Infoln("checking the authorization")
-	err := CheckAuthorization(r.Header.Get("Authorization"), rr)
+	logger.Infof("start handling request for url %s", r.RequestURI)
+	logger.Infoln("checking the authorization")
+	err := CheckAuthorization(r.Header.Get("Authorization"), rr, logger)
 	if err.StatusCode != 0 {
-		log.Infoln("fail to check authorization")
+		logger.Infoln("fail to check authorization")
 		w.WriteHeader(err.StatusCode)
 		res = BuildJsonResponse(err.Body)
 	} else {
-		resp := rr.Func(r)
-		log.Infof("process request return with status code %d\n", resp.StatusCode)
+		resp := rr.Func(r, logger)
+		logger.Infof("process request return with status code %d\n", resp.StatusCode)
 		if resp.StatusCode == 0 {w.WriteHeader(http.StatusOK)} else {w.WriteHeader(resp.StatusCode)}
 		res = BuildJsonResponse(resp.Body)
 	}
-	log.WithField("Response Size", len(res)).Infof("done handling request for url \"%s\"", r.RequestURI)
-	w.Write(res)
+	logger.WithField("Response Size", len(res)).Infof("done handling request for url \"%s\"", r.RequestURI)
+	_, errs := w.Write(res)
+	if errs != nil {
+		logger.Errorf("fail to write response due to %s", errs)
+	}
 }
 
 func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
@@ -133,12 +142,12 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
 
-	log.Info("registering req id middleware")
-	r.Use(ReqIdMiddleware)
 	log.Info("registering content type middleware")
 	r.Use(ContentTypeMiddleware)
 	log.Info("registering jwt middleware")
 	r.Use(JwtTokenMiddleware)
+	log.Info("registering logger field middleware")
+	r.Use(LoggerFieldMiddleware)
 	log.Infof("registering middlewares, total %d middlewares", len(middleware))
 	for _, mwr := range middleware {
 		mw := mwr

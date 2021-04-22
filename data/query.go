@@ -23,6 +23,22 @@ func (e *NoExistingQueryBuilderError) Error() string {
 	return fmt.Sprintf("No Existing Query Builder with key '%s' is found", e.key)
 }
 
+func ExtractQuery (queries string) map[string]string {
+	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%.]+))+`)
+	exps := r.FindAllStringSubmatch(queries, -1)
+	var results = make(map[string]string)
+	var keys = make(map[string]int)
+	for i, key := range r.SubexpNames() {
+		if key != "" {
+			keys[key] = i
+		}
+	}
+	for _, exp := range exps {
+		results[exp[keys["key"]]] = exp[keys["value"]]
+	}
+	return results
+}
+
 type QueryBuilder interface {
 	IsValid (value string) bool
 	ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB
@@ -72,22 +88,6 @@ func (q *Query) GetBuilder (value string) QueryBuilder {
 		}
 	}
 	return nil
-}
-
-func (q *Query) Query (queries string) map[string]string {
-	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%.]+))+`)
-	exps := r.FindAllStringSubmatch(queries, -1)
-	var results = make(map[string]string)
-	var keys = make(map[string]int)
-	for i, key := range r.SubexpNames() {
-		if key != "" {
-			keys[key] = i
-		}
-	}
-	for _, exp := range exps {
-		results[exp[keys["key"]]] = exp[keys["value"]]
-	}
-	return results
 }
 
 func (q *Query) BuildResponse (queries map[string]string, result interface{}) builder.HttpResponse {
