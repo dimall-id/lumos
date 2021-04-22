@@ -1,12 +1,12 @@
 package status
 
 const (
-	DRAFT = 100
-	SUBMIT = 110
+	DRAFT = 10
+	SUBMIT = 11
 
-	ACTIVE = 200
-	INACTIVE = 210
+	ACTIVE = 40
+	INACTIVE = 41
 
-	DELETE = 400
-	ARCHIVE = 410
+	DELETE = 80
+	ARCHIVE = 81
 )
