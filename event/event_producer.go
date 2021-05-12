@@ -144,7 +144,9 @@ func StartProducer (config Config) error {
 	sqlDB, err = db.DB()
 	if err != nil {return err}
 	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	sqlDB.SetConnMaxLifetime(10 * time.Minute)
 
 	defer sqlDB.Close()
 
