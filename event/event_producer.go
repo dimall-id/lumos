@@ -2,13 +2,10 @@ package event
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -125,33 +122,9 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 	return err
 }
 
-func StartProducer (config Config) error {
-	connString := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC",
-		config.DatasourceConfig.Host,
-		config.DatasourceConfig.User,
-		config.DatasourceConfig.Password,
-		config.DatasourceConfig.Database,
-		config.DatasourceConfig.Port)
-
-	log.Info("starting DB connection")
-	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
-		PrepareStmt: true,
-	})
-	if err != nil {return err}
-
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
-	if err != nil {return err}
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetMaxIdleConns(5)
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
-	sqlDB.SetConnMaxLifetime(10 * time.Minute)
-
-	defer sqlDB.Close()
-
+func StartProducer (config Config, db *gorm.DB) error {
 	log.Info("migrating outbox table")
-	err = initOutboxTable(db)
+	err := initOutboxTable(db)
 	if err != nil {return err}
 	log.Info("done migrating outbox table")
 
