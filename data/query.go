@@ -5,6 +5,7 @@ import (
 	"github.com/dimall-id/lumos/v2/data/builder"
 	"github.com/dimall-id/lumos/v2/misc"
 	"gorm.io/gorm"
+	"net/url"
 	"regexp"
 	"strconv"
 )
@@ -34,7 +35,10 @@ func ExtractQuery (queries string) map[string]string {
 		}
 	}
 	for _, exp := range exps {
-		results[exp[keys["key"]]] = exp[keys["value"]]
+		t, err := url.QueryUnescape(exp[keys["value"]])
+		if  err == nil {
+		results[exp[keys["key"]]] = t
+		}
 	}
 	return results
 }
