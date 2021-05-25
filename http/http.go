@@ -127,7 +127,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, rr Route) {
 
 func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Router {
 	log.Infoln("initializing mux router")
-	r := mux.NewRouter()
+	r := mux.NewRouter().UseEncodedPath()
 	log.Infoln("registering method not found handler")
 	r.MethodNotAllowedHandler = methodNotAllowedHandler()
 	log.Infoln("registering not found handler")
