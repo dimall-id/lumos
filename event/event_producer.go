@@ -51,19 +51,20 @@ func initOutboxTable (DB *gorm.DB) error {
 		CREATE OR REPLACE FUNCTION public.new_queue_message()
 		 RETURNS trigger
 		 LANGUAGE plpgsql
-		as $$
-		declare
-			payload jsonb;
-		begin
-			
-			if new.status::varchar = 'QUEUE'::varchar then 
-				payload = row_to_json(NEW);
-				PERFORM pg_notify('lumos_ouboxes', payload::Text);
-				return new;
-			end if;
-		
-		end; 
-		$$;
+		AS $function$
+				declare
+					payload jsonb;
+				begin
+					
+					if new.status::varchar = 'QUEUE'::varchar then 
+						payload = row_to_json(NEW);
+						PERFORM pg_notify('lumos_ouboxes', payload::Text);
+						return new;
+					end if;
+					return new;
+				
+				end; 
+				$function$;
 		
 		CREATE table if not exists public.lumos_outboxes (
 			id varchar(50) NOT NULL,
@@ -169,10 +170,10 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 }
 
 func StartProducer (config Config, db *gorm.DB) error {
-	log.Info("migrating outbox table")
+	log.Warn("migrating outbox table")
 	err := initOutboxTable(db)
 	if err != nil {return err}
-	log.Info("done migrating outbox table")
+	log.Warn("done migrating outbox table")
 
 	conn, err := pgx.Connect(pgx.ConnConfig{Host: config.DatasourceConfig.Host, Port: config.DatasourceConfig.Port, User: config.DatasourceConfig.User, Password: config.DatasourceConfig.Password, Database: config.DatasourceConfig.Database})
 	if err != nil {
@@ -199,7 +200,7 @@ func StartProducer (config Config, db *gorm.DB) error {
 			return err
 		}
 		go func() {
-			message := LumosOutbox{}
+			var message LumosOutbox
 			err = json.Unmarshal([]byte(msg.Payload), &message)
 			if err != nil {
 				log.Errorf("fail to decode message due to '%s'", err)
@@ -216,11 +217,11 @@ func StartProducer (config Config, db *gorm.DB) error {
 			if err != nil {
 				log.Errorf("put back message to QUEUE due to %s", err.Error())
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
-				log.Info("message put backed to QUEUE")
+				log.Warn("message put backed to QUEUE")
 			} else {
-				log.Info("marking message as delivered")
+				log.Warn("marking message as delivered")
 				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
-				log.Info("message marked as delivered")
+				log.Warn("message marked as delivered")
 			}
 		}()
 	}
