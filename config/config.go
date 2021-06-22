@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.etcd.io/etcd/client/v3"
@@ -76,8 +77,33 @@ func readEtcdRemoteConfig() ([]byte, error) {
 	return json.Marshal(data)
 }
 
-func WatchConfig() {
-	config.WatchConfig()
+func WatchConfig() error {
+	endpoint := config.GetString("etcd.hosts")
+	endpoints := strings.Split(endpoint, ",")
+	log.Warnf("connecting to ectd cluster %s", endpoints)
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints: endpoints,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		log.Errorf("fail to open etcd connection due to '%s'", err)
+		return err
+	}
+	defer func () {
+		err = cli.Close()
+		if err != nil {
+			log.Errorf("fail to close etcd client due to %s", err)
+		}
+	}()
+
+	rch := cli.Watch(context.Background(), config.GetString("etcd.path"))
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			log.Warnf("%s %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+			config.Set(fmt.Sprintf("%q", ev.Kv.Key), ev.Kv.Value)
+		}
+	}
+	return nil
 }
 
 func Get(key string) interface{} {

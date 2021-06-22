@@ -101,30 +101,32 @@ func StartConsumers (config ConsumerConfig) error {
 			log.Errorf("fail to fetch message due to %s", err.Error())
 			continue
 		}
-		message, err := GenerateConsumerMessage(m)
-		if err != nil {
-			log.Errorf("error in converting data from kafka.message to ConsumerMessage %s", err.Error())
-			continue
-		}
-		logger := log.WithFields(log.Fields{
-			"topic" : message.Topic,
-			"partition" : m.Partition,
-			"offset" : m.Offset,
-			"message_id" : message.MessageId,
-		})
-		if callback, oke := callbacks[message.Topic]; oke {
-			err := callback(message, logger)
+		go func(m kafka.Message) {
+			message, err := GenerateConsumerMessage(m)
 			if err != nil {
-				logger.Errorf("event callback fail to finish it job due to %s", err.Error())
-				continue
+				log.Errorf("error in converting data from kafka.message to ConsumerMessage %s", err.Error())
+				return
 			}
-			err = r.CommitMessages(context.Background(), m)
-			if err != nil {
-				logger.Errorf("fail to commit message due to %s", err.Error())
+			logger := log.WithFields(log.Fields{
+				"topic" : message.Topic,
+				"partition" : m.Partition,
+				"offset" : m.Offset,
+				"message_id" : message.MessageId,
+			})
+			if callback, oke := callbacks[message.Topic]; oke {
+				err := callback(message, logger)
+				if err != nil {
+					logger.Errorf("event callback fail to finish it job due to %s", err.Error())
+					return
+				}
+				err = r.CommitMessages(context.Background(), m)
+				if err != nil {
+					logger.Errorf("fail to commit message due to %s", err.Error())
+				}
+			} else {
+				log.Errorf("no callback for topic '%s' found", message.Topic)
 			}
-		} else {
-			log.Errorf("no callback for topic '%s' found", message.Topic)
-		}
+		}(m)
 	}
 }
 
