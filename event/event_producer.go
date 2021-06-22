@@ -34,8 +34,8 @@ type LumosOutbox struct {
 	KafkaValue string `json:"kafka_value" gorm:"kafka_value;type:varchar;size:50000;notNull"`
 	KafkaHeaderKeys string `json:"kafka_header_keys" gorm:"kafka_header_keys;type:varchar;size:50000"`
 	KafkaHeaderValues string `json:"kafka_header_values" gorm:"kafka_header_values;type:varchar;size:50000"`
-	CreatedAt time.Time `json:"created_at" gorm:"created_at;notNull"`
-	DeliveredAt time.Time`json:"delivered_at" gorm:"delivered_at"`
+	CreatedAt int64 `json:"created_at" gorm:"created_at;notNull"`
+	DeliveredAt int64 `json:"delivered_at" gorm:"delivered_at"`
 	Status string `json:"status" gorm:"status,type:varchar;size:100;index:status_index;notNull"`
 }
 
@@ -73,8 +73,8 @@ func initOutboxTable (DB *gorm.DB) error {
 			kafka_value varchar(50000) NOT NULL,
 			kafka_header_keys varchar(50000) NULL,
 			kafka_header_values varchar(50000) NULL,
-			created_at timestamp NOT NULL,
-			delivered_at timestamp NULL,
+			created_at int8 NOT NULL,
+			delivered_at int8 NULL,
 			status varchar(100) NOT NULL,
 			CONSTRAINT lumos_outboxes_pkey PRIMARY KEY (id)
 		);
@@ -148,7 +148,7 @@ func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 		KafkaValue: message.Value,
 		KafkaHeaderKeys: strings.Join(keys[:], ","),
 		KafkaHeaderValues: strings.Join(values[:], ","),
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().Unix(),
 		Status: "QUEUE",
 	}
 
@@ -220,7 +220,7 @@ func StartProducer (config Config, db *gorm.DB) error {
 				log.Warn("message put backed to QUEUE")
 			} else {
 				log.Warn("marking message as delivered")
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now().Unix()})
 				log.Warn("message marked as delivered")
 			}
 		}()
