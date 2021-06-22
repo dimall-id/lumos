@@ -28,15 +28,15 @@ type DatasourceConfig struct {
 }
 
 type LumosOutbox struct {
-	Id string `gorm:"id,primaryKey;type:varchar;size:50"`
-	KafkaTopic string `gorm:"kafka_topic;type:varchar;size:500;notNull"`
-	KafkaKey string `gorm:"kafka_key;type:varchar;size:500;notNull"`
-	KafkaValue string `gorm:"kafka_value;type:varchar;size:50000;notNull"`
-	KafkaHeaderKeys string `gorm:"kafka_header_keys;type:varchar;size:50000"`
-	KafkaHeaderValues string `gorm:"kafka_header_values;type:varchar;size:50000"`
-	CreatedAt time.Time `gorm:"created_at;notNull"`
-	DeliveredAt time.Time`gorm:"delivered_at"`
-	Status string `gorm:"status,type:varchar;size:100;index:status_index;notNull"`
+	Id string `json:"id" gorm:"id,primaryKey;type:varchar;size:50"`
+	KafkaTopic string `json:"kafka_topic" gorm:"kafka_topic;type:varchar;size:500;notNull"`
+	KafkaKey string `json:"kafka_key" gorm:"kafka_key;type:varchar;size:500;notNull"`
+	KafkaValue string `json:"kafka_value" gorm:"kafka_value;type:varchar;size:50000;notNull"`
+	KafkaHeaderKeys string `json:"kafka_header_keys" gorm:"kafka_header_keys;type:varchar;size:50000"`
+	KafkaHeaderValues string `json:"kafka_header_values" gorm:"kafka_header_values;type:varchar;size:50000"`
+	CreatedAt time.Time `json:"created_at" gorm:"created_at;notNull"`
+	DeliveredAt time.Time`json:"delivered_at" gorm:"delivered_at"`
+	Status string `json:"status" gorm:"status,type:varchar;size:100;index:status_index;notNull"`
 }
 
 type LumosMessage struct {
