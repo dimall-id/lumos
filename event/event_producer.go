@@ -51,7 +51,7 @@ func initOutboxTable (DB *gorm.DB) error {
 		CREATE OR REPLACE FUNCTION public.new_queue_message()
 		 RETURNS trigger
 		 LANGUAGE plpgsql
-		AS $function$
+		as $$
 		declare
 			payload jsonb;
 		begin
@@ -62,11 +62,10 @@ func initOutboxTable (DB *gorm.DB) error {
 				return new;
 			end if;
 		
-		end;
-		$function$
-		;
+		end; 
+		$$;
 		
-		CREATE IF NOT EXISTS TABLE public.lumos_outboxes (
+		CREATE table if not exists public.lumos_outboxes (
 			id varchar(50) NOT NULL,
 			kafka_topic varchar(255) NOT NULL,
 			kafka_key varchar(500) NOT NULL,
