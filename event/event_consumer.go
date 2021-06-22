@@ -7,6 +7,7 @@ import (
 	"github.com/segmentio/kafka-go"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 type ExistingCallbackError struct {
@@ -93,7 +94,17 @@ func StartConsumers (config ConsumerConfig) error {
 		Brokers: config.Brokers,
 		GroupID: config.ConsumerGroupId,
 		GroupTopics: topics,
+		MinBytes: 5,
+		MaxBytes: 1e6,
+		MaxWait: 3 * time.Second,
+		StartOffset: kafka.FirstOffset,
 	})
+	defer func() {
+		err := r.Close()
+		if err != nil {
+			log.Errorf("fail to close kafka connection due to '%s'", err)
+		}
+	}()
 
 	for {
 		m, err := r.FetchMessage(context.Background())

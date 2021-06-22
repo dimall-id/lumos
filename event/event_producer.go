@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx"
 	"github.com/segmentio/kafka-go"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ type Config struct {
 
 type DatasourceConfig struct {
 	Host string
-	Port string
+	Port uint16
 	User string
 	Password string
 	Database string
@@ -46,8 +47,54 @@ type LumosMessage struct {
 }
 
 func initOutboxTable (DB *gorm.DB) error {
-	err := DB.AutoMigrate(&LumosOutbox{})
-	return err
+	query := `
+		CREATE OR REPLACE FUNCTION public.new_queue_message()
+		 RETURNS trigger
+		 LANGUAGE plpgsql
+		AS $function$
+		declare
+			payload jsonb;
+		begin
+			
+			if new.status::varchar = 'QUEUE'::varchar then 
+				payload = row_to_json(NEW);
+				PERFORM pg_notify('lumos_ouboxes', payload::Text);
+				return new;
+			end if;
+		
+		end;
+		$function$
+		;
+		
+		CREATE IF NOT EXISTS TABLE public.lumos_outboxes (
+			id varchar(50) NOT NULL,
+			kafka_topic varchar(255) NOT NULL,
+			kafka_key varchar(500) NOT NULL,
+			kafka_value varchar(50000) NOT NULL,
+			kafka_header_keys varchar(50000) NULL,
+			kafka_header_values varchar(50000) NULL,
+			created_at timestamp NOT NULL,
+			delivered_at timestamp NULL,
+			status varchar(100) NOT NULL,
+			CONSTRAINT lumos_outboxes_pkey PRIMARY KEY (id)
+		);
+		
+		drop trigger if exists lumos_outbox_inserted on lumos_outboxes;
+		create trigger lumos_outbox_inserted
+			after insert
+			on public.lumos_outboxes
+			for each row
+			execute procedure public.new_queue_message();
+			
+		drop trigger if exists lumos_outbox_updated on lumos_outboxes;
+		create trigger lumos_outbox_updated
+			after update
+			on public.lumos_outboxes
+			for each row
+			execute procedure public.new_queue_message();
+	`
+	tx := DB.Exec(query)
+	return tx.Error
 }
 
 func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
@@ -128,41 +175,54 @@ func StartProducer (config Config, db *gorm.DB) error {
 	if err != nil {return err}
 	log.Info("done migrating outbox table")
 
-	tx := db.Session(&gorm.Session{PrepareStmt: true})
-	var messages []LumosOutbox
-	for {
-		log.Info("fetching message with status QUEUE")
-		tx.Where("status = ?", "QUEUE").Order("created_at asc").Find(&messages)
-		log.Infof("processing %d amount of message", len(messages))
-		if len(messages) > 0 {
-			for _, message := range messages {
-				kMessage, err := GenerateKafkaMessage(message)
-				if err != nil {
-					return err
-				}
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
-				err = SendMessage(message.KafkaTopic, config, kMessage)
-				if err != nil {
-					log.Errorf("put back message to QUEUE due to %s", err.Error())
-					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
-					log.Info("message put backed to QUEUE")
-				} else {
-					log.Info("marking message as delivered")
-					db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
-					log.Info("message marked as delivered")
-				}
-			}
+	conn, err := pgx.Connect(pgx.ConnConfig{Host: config.DatasourceConfig.Host, Port: config.DatasourceConfig.Port, User: config.DatasourceConfig.User, Password: config.DatasourceConfig.Password, Database: config.DatasourceConfig.Database})
+	if err != nil {
+		log.Errorf("Fail to open database connection due to '%s'", err)
+		return err
+	}
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			log.Errorf("fail to close database donnection due to '%s'", err)
 		}
+	}()
 
-		var PoolDuration time.Duration = 10
-		if &config.PoolDuration != nil {
-			PoolDuration = config.PoolDuration
+	err = conn.Listen("lumos_outbox")
+	if err != nil {
+		log.Errorf("fail to listen to lumos_outbox notify due to '%s'", err)
+		return err
+	}
+
+	for {
+		msg, err := conn.WaitForNotification(context.Background())
+		if err != nil {
+			log.Errorf("fail to get notification message due to '%s'", err)
+			return err
 		}
-		log.Infof("sleep for %d seconds", PoolDuration)
-		time.Sleep(PoolDuration * time.Second)
-		/**
-		Clear the data for GC to collect
-		 */
-		messages = nil
+		go func() {
+			message := LumosOutbox{}
+			err = json.Unmarshal([]byte(msg.Payload), &message)
+			if err != nil {
+				log.Errorf("fail to decode message due to '%s'", err)
+				return
+			}
+
+			kMessage, err := GenerateKafkaMessage(message)
+			if err != nil {
+				log.Errorf("fail to generate kafka message due to '%s'", err)
+				return
+			}
+			db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
+			err = SendMessage(message.KafkaTopic, config, kMessage)
+			if err != nil {
+				log.Errorf("put back message to QUEUE due to %s", err.Error())
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
+				log.Info("message put backed to QUEUE")
+			} else {
+				log.Info("marking message as delivered")
+				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now()})
+				log.Info("message marked as delivered")
+			}
+		}()
 	}
 }
