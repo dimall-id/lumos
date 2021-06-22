@@ -186,7 +186,7 @@ func StartProducer (config Config, db *gorm.DB) error {
 		}
 	}()
 
-	err = conn.Listen("lumos_outbox")
+	err = conn.Listen("lumos_ouboxes")
 	if err != nil {
 		log.Errorf("fail to listen to lumos_outbox notify due to '%s'", err)
 		return err
