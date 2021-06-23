@@ -14,7 +14,7 @@ type SendTo struct {
 }
 
 type Message struct {
-	SendTo []string `json:"send_to"`
+	SendTo []SendTo `json:"send_to"`
 	Subject string `json:"subject"`
 	Template string `json:"template"`
 	Data map[string]interface{} `json:"data"`
