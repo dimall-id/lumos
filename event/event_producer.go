@@ -207,9 +207,9 @@ func StartProducer (config Config) error {
 		return err
 	}
 
-	err = lconn.Listen("lumox_outboxes")
+	err = lconn.Listen("lumos_ouboxes")
 	if err != nil {
-		log.Errorf("fail to listen to lumox_outboxes channel due to '%s'", err)
+		log.Errorf("fail to listen to lumos_ouboxes channel due to '%s'", err)
 		return err
 	}
 
@@ -220,18 +220,6 @@ func StartProducer (config Config) error {
 			return err
 		}
 		go func() {
-			conn2, err := pgx.Connect(pgx.ConnConfig{Host: config.DatasourceConfig.Host, Port: config.DatasourceConfig.Port, User: config.DatasourceConfig.User, Password: config.DatasourceConfig.Password, Database: config.DatasourceConfig.Database})
-			if err != nil {
-				log.Errorf("Fail to open database connection due to '%s'", err)
-				return
-			}
-			defer func() {
-				err := conn2.Close()
-				if err != nil {
-					log.Errorf("fail to close database donnection due to '%s'", err)
-				}
-			}()
-
 			var message LumosOutbox
 			err = json.Unmarshal([]byte(msg.Payload), &message)
 			if err != nil {
@@ -244,11 +232,11 @@ func StartProducer (config Config) error {
 				log.Errorf("fail to generate kafka message due to '%s'", err)
 				return
 			}
-			conn2.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERING' where id = '%s'", message.Id))
+			conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERING' where id = '%s'", message.Id))
 			err = SendMessage(message.KafkaTopic, config, kMessage)
 			if err != nil {
 				log.Errorf("put back message to QUEUE due to %s", err.Error())
-				_, err = conn2.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='QUEUE' where id = '%s'", message.Id))
+				_, err = conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='QUEUE' where id = '%s'", message.Id))
 				if err != nil {
 					log.Errorf("fail to update message to QUEUE due to '%s'", err)
 				} else {
@@ -256,7 +244,7 @@ func StartProducer (config Config) error {
 				}
 			} else {
 				log.Warn("marking message as delivered")
-				_, err = conn2.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERED', delivered_at=%d where id = '%s'", time.Now().Unix(), message.Id))
+				_, err = conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERED', delivered_at=%d where id = '%s'", time.Now().Unix(), message.Id))
 				if err != nil {
 					log.Errorf("fail to update message to DELIVERED due to '%s'", err)
 				} else {
