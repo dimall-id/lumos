@@ -47,7 +47,7 @@ type LumosMessage struct {
 	Headers map[string]string
 }
 
-func initOutboxTable (DB *pgx.Conn) error {
+func initOutboxTable (DB *pgx.ConnPool) error {
 	query := `
 		CREATE OR REPLACE FUNCTION public.new_queue_message()
 		 RETURNS trigger
@@ -171,31 +171,50 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 }
 
 func StartProducer (config Config) error {
-	conn, err := pgx.Connect(pgx.ConnConfig{Host: config.DatasourceConfig.Host, Port: config.DatasourceConfig.Port, User: config.DatasourceConfig.User, Password: config.DatasourceConfig.Password, Database: config.DatasourceConfig.Database})
+	conn, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig : pgx.ConnConfig{
+			Host: config.DatasourceConfig.Host,
+			Port: config.DatasourceConfig.Port,
+			User: config.DatasourceConfig.User,
+			Password: config.DatasourceConfig.Password,
+			Database: config.DatasourceConfig.Database,
+		},
+		MaxConnections: 100,
+	})
 	if err != nil {
-		log.Errorf("Fail to open database connection due to '%s'", err)
+		log.Errorf("fail to open connection pool due to '%s", err)
 		return err
 	}
-	defer func() {
-		err := conn.Close()
-		if err != nil {
-			log.Errorf("fail to close database donnection due to '%s'", err)
-		}
-	}()
+	defer conn.Close()
 
 	log.Warn("migrating outbox table")
 	err = initOutboxTable(conn)
-	if err != nil {return err}
-	log.Warn("done migrating outbox table")
-	err = conn.Listen("lumos_ouboxes")
+	if err != nil{
+		log.Errorf("fail to init outbox table due to '%s'", err)
+		return err
+	}
+	log.Warn("success migrating outbox table")
+
+	lconn, err := pgx.Connect(pgx.ConnConfig{
+		Host: config.DatasourceConfig.Host,
+		Port: config.DatasourceConfig.Port,
+		User: config.DatasourceConfig.User,
+		Password: config.DatasourceConfig.Password,
+		Database: config.DatasourceConfig.Database,
+	})
 	if err != nil {
-		log.Errorf("fail to listen to lumos_outbox notify due to '%s'", err)
+		log.Errorf("fail to open listener connection due to '%s'", err)
 		return err
 	}
 
+	err = lconn.Listen("lumox_outboxes")
+	if err != nil {
+		log.Errorf("fail to listen to lumox_outboxes channel due to '%s'", err)
+		return err
+	}
 
 	for {
-		msg, err := conn.WaitForNotification(context.Background())
+		msg, err := lconn.WaitForNotification(context.Background())
 		if err != nil {
 			log.Errorf("fail to get notification message due to '%s'", err)
 			return err
@@ -237,9 +256,9 @@ func StartProducer (config Config) error {
 				}
 			} else {
 				log.Warn("marking message as delivered")
-				_, err = conn2.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERED' where id = '%s'", message.Id))
+				_, err = conn2.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERED', delivered_at=%d where id = '%s'", time.Now().Unix(), message.Id))
 				if err != nil {
-					log.Errorf("fail to update message to QUEUE due to '%s'", err)
+					log.Errorf("fail to update message to DELIVERED due to '%s'", err)
 				} else {
 					log.Warn("message marked as delivered")
 				}
