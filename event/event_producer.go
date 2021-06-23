@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx"
 	"github.com/segmentio/kafka-go"
@@ -46,7 +47,7 @@ type LumosMessage struct {
 	Headers map[string]string
 }
 
-func initOutboxTable (DB *gorm.DB) error {
+func initOutboxTable (DB *pgx.Conn) error {
 	query := `
 		CREATE OR REPLACE FUNCTION public.new_queue_message()
 		 RETURNS trigger
@@ -93,8 +94,8 @@ func initOutboxTable (DB *gorm.DB) error {
 			for each row
 			execute procedure public.new_queue_message();
 	`
-	tx := DB.Exec(query)
-	return tx.Error
+	_, err := DB.Exec(query)
+	return err
 }
 
 func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
@@ -169,12 +170,7 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 	return err
 }
 
-func StartProducer (config Config, db *gorm.DB) error {
-	log.Warn("migrating outbox table")
-	err := initOutboxTable(db)
-	if err != nil {return err}
-	log.Warn("done migrating outbox table")
-
+func StartProducer (config Config) error {
 	conn, err := pgx.Connect(pgx.ConnConfig{Host: config.DatasourceConfig.Host, Port: config.DatasourceConfig.Port, User: config.DatasourceConfig.User, Password: config.DatasourceConfig.Password, Database: config.DatasourceConfig.Database})
 	if err != nil {
 		log.Errorf("Fail to open database connection due to '%s'", err)
@@ -186,6 +182,11 @@ func StartProducer (config Config, db *gorm.DB) error {
 			log.Errorf("fail to close database donnection due to '%s'", err)
 		}
 	}()
+
+	log.Warn("migrating outbox table")
+	err = initOutboxTable(conn)
+	if err != nil {return err}
+	log.Warn("done migrating outbox table")
 
 	err = conn.Listen("lumos_ouboxes")
 	if err != nil {
@@ -212,16 +213,24 @@ func StartProducer (config Config, db *gorm.DB) error {
 				log.Errorf("fail to generate kafka message due to '%s'", err)
 				return
 			}
-			db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status","DELIVERING")
+			conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERING' where id = '%s'", message.Id))
 			err = SendMessage(message.KafkaTopic, config, kMessage)
 			if err != nil {
 				log.Errorf("put back message to QUEUE due to %s", err.Error())
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Update("status", "QUEUE")
-				log.Warn("message put backed to QUEUE")
+				_, err = conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='QUEUE' where id = '%s'", message.Id))
+				if err != nil {
+					log.Errorf("fail to update message to QUEUE due to '%s'", err)
+				} else {
+					log.Warn("message put backed to QUEUE")
+				}
 			} else {
 				log.Warn("marking message as delivered")
-				db.Model(&LumosOutbox{}).Where("id = ?", message.Id).Updates(LumosOutbox{Status: "DELIVERED", DeliveredAt: time.Now().Unix()})
-				log.Warn("message marked as delivered")
+				_, err = conn.Exec(fmt.Sprintf("UPDATE public.lumos_outboxes SET status='DELIVERED' where id = '%s'", message.Id))
+				if err != nil {
+					log.Errorf("fail to update message to QUEUE due to '%s'", err)
+				} else {
+					log.Warn("message marked as delivered")
+				}
 			}
 		}()
 	}
