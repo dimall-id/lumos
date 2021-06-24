@@ -27,7 +27,7 @@ func (e *NoExistingQueryBuilderError) Error() string {
 func ExtractQuery (queries string) map[string]string {
 	qString, _ := url.QueryUnescape(queries)
 	r := regexp.MustCompile(`(?:(?P<key>[\w\d\_]+)=(?P<value>[\w\d\:\[\]\,\;\_\%.\-]+))+`)
-	exps := r.FindAllStringSubmatch(qString, -1)
+	exps := r.FindAllStringSubmatch(queries, -1)
 	var results = make(map[string]string)
 	var keys = make(map[string]int)
 	for i, key := range r.SubexpNames() {
