@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	StringPattern = "\\[(?P<type>(?:eq|neq|like));(?P<condition>[a-zA-Z0-9\\s\\%\\-]+)\\]"
+	StringPattern = "\\[(?P<type>(?:eq|neq|like|ilike));(?P<condition>[a-zA-Z0-9\\s\\-]+)\\]"
 )
 
 type StringBuilder struct {}
@@ -18,12 +18,19 @@ func (lb *StringBuilder) IsValid (value string) bool {
 	return r.MatchString(value)
 }
 
+func (lb *StringBuilder) getCondition(operator string, condition string) string {
+	if operator == "like" || operator == "ilike" {
+		return "%" + condition + "%"
+	}
+	return condition
+}
+
 func (lb *StringBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(StringPattern, condition)
 	if cond == nil {
 		return db
 	}
-	query := field + GetOperator(cond["type"]) + "'" + cond["condition"] + "'"
+	query := field + GetOperator(cond["type"]) + "'" + lb.getCondition(cond["type"], cond["condition"]) + "'"
 	tx := db
 	tx = tx.Where(query)
 	return tx
