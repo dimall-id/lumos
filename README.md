@@ -64,9 +64,9 @@ Main Feature :
 	 example :
 	 - order=[order;name:asc,price:desc]
  5. Paging Query
-	 format : paging=[page=0-9,per_page=0-9]
+	 format : paging=[page:0-9,per_page:0-9]
 	 example :
-	 - paging=[page=1,per_page=10]
+	 - paging=[page:1,per_page:10]
  6. With Query
 	 format : with=[with;relation,relation,...]
 	 example :
@@ -76,11 +76,12 @@ Main Feature :
 	 example :
 	 - select=[select;id,name,price]
  8. String Query
-	 format : field=[eq|neq|like;value]
+	 format : field=[eq|neq|like;ilike;value]
 	 example
 	- name=[eq;Product A]
 	- name=[neq;Product B]
-	- name=[like;%Produc%]
+	- name=[like;Produc]
+	- name=[ilike;Product]
 
 
 ## Setup Query at Handler
