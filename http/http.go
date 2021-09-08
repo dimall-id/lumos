@@ -190,8 +190,9 @@ func setUrlPrefix (urlPrefix string) {
 	_urlPrefix = urlPrefix
 }
 
-func StartHttpServer(port string, publicKey string) error {
+func StartHttpServer(port string, publicKey string, prefix string) error {
 	err := setPublicKey(publicKey)
+	setUrlPrefix(prefix)
 	if err != nil {return err}
 	r := GenerateMuxRouter(routes, middlewares)
 	return http.ListenAndServe(port, r)
