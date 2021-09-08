@@ -140,8 +140,9 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 		rr := GetRouteAt(i)
 		url := rr.Url
 		if &_urlPrefix != nil {
-			url = fmt.Sprintf("/%s/%s", _urlPrefix, rr.Url)
+			url = fmt.Sprintf("/%s%s", _urlPrefix, rr.Url)
 		}
+		log.Debugf("Registered URL :  %s", url)
 		r.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 			HandleRequest(w, r, rr)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
