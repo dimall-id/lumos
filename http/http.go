@@ -14,6 +14,7 @@ import (
 )
 
 var _publicKey []byte
+var _urlPrefix string
 
 func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +138,11 @@ func GenerateMuxRouter (routes []Route, middleware []mux.MiddlewareFunc) *mux.Ro
 	for i, _ := range routes {
 		log.WithFields(routes[i].toFieldMaps()).Infof("registering routes %s", routes[i].Name)
 		rr := GetRouteAt(i)
-		r.HandleFunc(rr.Url, func(w http.ResponseWriter, r *http.Request) {
+		url := rr.Url
+		if &_urlPrefix != nil {
+			url = fmt.Sprintf("/%s/%s", _urlPrefix, rr.Url)
+		}
+		r.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 			HandleRequest(w, r, rr)
 		}).Methods(rr.HttpMethod).Name(rr.Name)
 	}
@@ -179,6 +184,10 @@ func setPublicKey (publicKeyUrl string) error {
 
 	_publicKey = byteKey
 	return nil
+}
+
+func setUrlPrefix (urlPrefix string) {
+	_urlPrefix = urlPrefix
 }
 
 func StartHttpServer(port string, publicKey string) error {
