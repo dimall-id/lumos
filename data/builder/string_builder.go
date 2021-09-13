@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 	"github.com/dimall-id/lumos/v2/misc"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"regexp"
 	"strings"
@@ -23,7 +24,9 @@ func (lb *StringBuilder) IsValid (value string) bool {
 func (lb *StringBuilder) getCondition(operator string, condition string) string {
 	if operator == "like" || operator == "ilike" {
 		cond := strings.Replace(condition," ", "%", -1)
-		return fmt.Sprintf("%%%s%%%", cond)
+		c := fmt.Sprintf("%%%s%%%", cond)
+		log.Error(c)
+		return c
 	}
 	return condition
 }
