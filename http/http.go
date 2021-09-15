@@ -67,7 +67,8 @@ func CheckAuthorization(authentication string, rr Route, logger *log.Entry) Resp
 	} else {
 		logger.Infof("parsing and validating the jwt token signature")
 		tokens := misc.BuildToMap(`Bearer (?P<token>[\W\w]+)`, authentication)
-		claims, err := jwt.ParseWithClaims(tokens["token"], jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {return _publicKey, nil})
+		key, err := jwt.ParseRSAPublicKeyFromPEM(_publicKey)
+		claims, err := jwt.ParseWithClaims(tokens["token"], jwt.MapClaims{}, key)
 		if err != nil {
 			logger.Infof("fail to validate the jwt token signature")
 			logger.Error(err)
