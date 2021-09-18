@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/dimall-id/lumos/v2/misc"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 const (
-	StringPattern = "\\[(?P<type>(?:eq|neq|like|ilike));(?P<condition>[a-zA-Z0-9\\s\\-\_]+)\\]"
+	StringPattern = "\\[(?P<type>(?:eq|neq|like|ilike));(?P<condition>[a-zA-Z0-9\\s\\-\\_]+)\\]"
 )
 
 type StringBuilder struct{}
@@ -34,7 +33,6 @@ func (lb *StringBuilder) ApplyQuery(db *gorm.DB, field string, condition string)
 		return db
 	}
 	query := field + GetOperator(cond["type"]) + "'" + lb.getCondition(cond["type"], cond["condition"]) + "'"
-	logrus.Warn(query)
 	tx := db
 	tx = tx.Where(query)
 	return tx
