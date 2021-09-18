@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	StringPattern = "\\[(?P<type>(?:eq|neq|like|ilike));(?P<condition>[a-zA-Z0-9\\s\\-]+)\\]"
+	StringPattern = "\\[(?P<type>(?:eq|neq|like|ilike));(?P<condition>[a-zA-Z0-9\\s\\-\_]+)\\]"
 )
 
 type StringBuilder struct{}
