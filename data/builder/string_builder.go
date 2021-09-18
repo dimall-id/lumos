@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/dimall-id/lumos/v2/misc"
-	"github.com/rs/zerolog/log"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func (lb *StringBuilder) ApplyQuery(db *gorm.DB, field string, condition string)
 		return db
 	}
 	query := field + GetOperator(cond["type"]) + "'" + lb.getCondition(cond["type"], cond["condition"]) + "'"
-	log.Warn(query)
+	logrus.Warn(query)
 	tx := db
 	tx = tx.Where(query)
 	return tx
