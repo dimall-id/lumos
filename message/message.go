@@ -14,10 +14,11 @@ type SendTo struct {
 }
 
 type Message struct {
-	SendTo []SendTo `json:"send_to"`
-	Subject string `json:"subject"`
-	Template string `json:"template"`
-	Data map[string]interface{} `json:"data"`
+	SendTo      []SendTo               `json:"send_to"`
+	Subject     string                 `json:"subject"`
+	Template    string                 `json:"template"`
+	CountryCode string                 `json:"country_code"`
+	Data        map[string]interface{} `json:"data"`
 }
 
 func SendMessageCommand (message Message, tx *gorm.DB) error {
