@@ -45,43 +45,43 @@ Main Feature :
 ## Query Data
 
  1. Date Query
-	 format : field=[date;gt|gte|eq|neq:mm-dd-yyyy,lt|lte:mm-dd-yyyy]
+	 format : field=[gt|gte|eq|neq:mm-dd-yyyy,lt|lte:mm-dd-yyyy]
 	 example :
-	 - date=[date;gt:01-20-2020,lt:01-22-2020]
-	 - date=[date;eq:01-20-2020]
+	 - date=[gt:01-20-2020,lt:01-22-2020]
+	 - date=[eq:01-20-2020]
  2. Numeric Query
-	 format : field=[numeric;gt|gte|eq|neq:0-9,lt|lte:0-9]
+	 format : field=[gt|gte|eq|neq:0-9,lt|lte:0-9]
 	 example :
-	 - price=[numeric;gt:1000,lte:10000]
-	 - price=[numeric;neq:100000]
+	 - price=[gt:1000,lte:10000]
+	 - price=[neq:100000]
  3. List Query
-	 format : field=[in|nin;value,value,...]
+	 format : field=[in|nin:value,value,...]
 	 example :
-	 - id=[in;1,2,3,4]
-	 - id=[nin;1,2,3,4]
+	 - id=[in:1,2,3,4]
+	 - id=[nin:1,2,3,4]
  4. Order Query
-	 format : order=[order;field:asc|desc,field:asc|desc,...]
+	 format : order=[field:asc|desc,field:asc|desc,...]
 	 example :
-	 - order=[order;name:asc,price:desc]
+	 - order=[name:asc,price:desc]
  5. Paging Query
 	 format : paging=[page:0-9,per_page:0-9]
 	 example :
 	 - paging=[page:1,per_page:10]
  6. With Query
-	 format : with=[with;relation,relation,...]
+	 format : with=[with:relation,relation,...]
 	 example :
-	 - with=[with;ProductImage,ProductCategories]
+	 - with=[with:ProductImage,ProductCategories]
  7. Select Query
-	 format : select=[select;field,field,field,...]
+	 format : select=[select:field,field,field,...]
 	 example :
-	 - select=[select;id,name,price]
+	 - select=[select:id,name,price]
  8. String Query
-	 format : field=[eq|neq|like;ilike;value]
+	 format : field=[eq|neq|like|ilike:value]
 	 example
-	- name=[eq;Product A]
-	- name=[neq;Product B]
-	- name=[like;Produc]
-	- name=[ilike;Product]
+	- name=[eq:Product A]
+	- name=[neq:Product B]
+	- name=[like:Produc]
+	- name=[ilike:Product]
 
 
 ## Setup Query at Handler
