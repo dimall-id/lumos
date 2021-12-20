@@ -50,7 +50,7 @@ func TestMethodNotAllow(t *testing.T) {
 
 func TestUnprocessableEntity(t *testing.T) {
 	err := UnprocessableEntity(map[string][]string{
-		"username":[]string{
+		"username": []string{
 			"this is required",
 			"that is required",
 		},
@@ -67,16 +67,16 @@ func TestUnprocessableEntity(t *testing.T) {
 }
 
 func TestInvalidRouteError_Error(t *testing.T) {
-	r := Route{
-		Name: "Name Product",
-		HttpMethod: "GET",
-		Url: "/products",
-		Func: func(r *http.Request) (interface{}, HttpError) {
-			return nil, HttpError{}
-		},
-	}
+	//r := Route{
+	//	Name:       "Name Product",
+	//	HttpMethod: "GET",
+	//	Url:        "/products",
+	//	Func: func(r *http.Request) (interface{}, HttpError) {
+	//		return nil, HttpError{}
+	//	},
+	//}
 	err := InvalidRouteError{
-		route: r,
+		msg: "Route given is invalid",
 	}
 	if !strings.Contains(err.Error(), "Route given is invalid") {
 		t.Errorf("Invalid Route Error")
@@ -85,9 +85,9 @@ func TestInvalidRouteError_Error(t *testing.T) {
 
 func TestExistingRouteError_Error(t *testing.T) {
 	r := Route{
-		Name: "Name Product",
+		Name:       "Name Product",
 		HttpMethod: "GET",
-		Url: "/products",
+		Url:        "/products",
 		Func: func(r *http.Request) (interface{}, HttpError) {
 			return nil, HttpError{}
 		},

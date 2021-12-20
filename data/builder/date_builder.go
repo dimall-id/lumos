@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	DatePattern = "\\[(?P<type>date);(?P<condition>(?:(?P<op_one>gt|gte|eq|neq):(?P<val_one>\\d{2}-\\d{2}-\\d{4}))?,?(?:(?P<op_two>lt|lte):(?P<val_two>\\d{2}-\\d{2}-\\d{4}))?)\\]"
+	DatePattern = "\\[(?:(?P<op_one>gt|gte|eq|neq):(?P<val_one>\\d{2}-\\d{2}-\\d{4}))?,?(?:(?P<op_two>lt|lte):(?P<val_two>\\d{2}-\\d{2}-\\d{4}))?\\]"
 )
 
-type DateBuilder struct {}
+type DateBuilder struct{}
 
-func (dd *DateBuilder) IsValid (value string) bool {
+func (dd *DateBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(DatePattern)
 	return r.MatchString(value)
 }
 
-func (dd *DateBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (dd *DateBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(DatePattern, condition)
 	if cond == nil {
 		return db

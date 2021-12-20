@@ -6,80 +6,80 @@ import (
 )
 
 type HttpError struct {
-	Code int `json:"code" msgpack:"code"`
-	Message string `json:"message" msgpack:"message"`
-	Errors map[string][]string `json:"errors,omitempty" msgpack:"errors,as_array,omitempty"`
+	Code    int                 `json:"code" msgpack:"code"`
+	Message string              `json:"message" msgpack:"message"`
+	Errors  map[string][]string `json:"errors,omitempty" msgpack:"errors,as_array,omitempty"`
 }
 
 func InternalServerError() HttpError {
 	return HttpError{
-		Code: http.StatusInternalServerError,
+		Code:    http.StatusInternalServerError,
 		Message: "Internal Server Error",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func BadRequest() HttpError {
 	return HttpError{
-		Code: http.StatusBadRequest,
+		Code:    http.StatusBadRequest,
 		Message: "Bad Request",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func Unauthorized() HttpError {
 	return HttpError{
-		Code: http.StatusUnauthorized,
+		Code:    http.StatusUnauthorized,
 		Message: "Unauthorized",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func PaymentRequired() HttpError {
 	return HttpError{
-		Code: http.StatusPaymentRequired,
+		Code:    http.StatusPaymentRequired,
 		Message: "Payment Required",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func Forbidden() HttpError {
 	return HttpError{
-		Code: http.StatusForbidden,
+		Code:    http.StatusForbidden,
 		Message: "Forbidden",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func NotFound() HttpError {
 	return HttpError{
-		Code: http.StatusNotFound,
+		Code:    http.StatusNotFound,
 		Message: "Not Found",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func MethodNotAllow() HttpError {
 	return HttpError{
-		Code: http.StatusMethodNotAllowed,
+		Code:    http.StatusMethodNotAllowed,
 		Message: "Method Not Allowed",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 
 func UnprocessableEntity(errors map[string][]string) HttpError {
 	return HttpError{
-		Code: http.StatusUnprocessableEntity,
+		Code:    http.StatusUnprocessableEntity,
 		Message: "Unprocessable Entity",
-		Errors: errors,
+		Errors:  errors,
 	}
 }
 
 func NotImplemented() HttpError {
 	return HttpError{
-		Code: http.StatusNotImplemented,
+		Code:    http.StatusNotImplemented,
 		Message: "Not Implemented",
-		Errors: nil,
+		Errors:  nil,
 	}
 }
 

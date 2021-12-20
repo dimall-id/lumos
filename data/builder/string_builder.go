@@ -7,18 +7,17 @@ import (
 )
 
 const (
-	StringPattern = "\\[(?P<type>(?:eq|neq|like));(?P<condition>[a-zA-Z0-9\\s\\%\\-]+)\\]"
+	StringPattern = "\\[(?P<type>(?:eq|neq|like)):(?P<condition>[a-zA-Z0-9\\s\\%\\-]+)\\]"
 )
 
-type StringBuilder struct {}
+type StringBuilder struct{}
 
-
-func (lb *StringBuilder) IsValid (value string) bool {
+func (lb *StringBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(StringPattern)
 	return r.MatchString(value)
 }
 
-func (lb *StringBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (lb *StringBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(StringPattern, condition)
 	if cond == nil {
 		return db
@@ -28,4 +27,3 @@ func (lb *StringBuilder) ApplyQuery (db *gorm.DB, field string, condition string
 	tx = tx.Where(query)
 	return tx
 }
-

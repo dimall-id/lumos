@@ -9,30 +9,30 @@ import (
 
 func TestStringBuilder_IsValid(t *testing.T) {
 	testSets := []struct {
-		value string
+		value  string
 		expect bool
 	}{
 		{
-			"[like;%Andy Wijaya]",
+			"[like:%Andy Wijaya]",
 			true,
 		},
 		{
-			"[eq;Andy]",
+			"[eq:Andy]",
 			true,
 		},
 		{
-			"[neq;Andy]",
+			"[neq:Andy]",
 			true,
 		},
 		{
-			"[neq;Andy,Andy]",
+			"[neq:Andy,Andy]",
 			false,
 		},
 	}
 
-	for i,test := range testSets {
+	for i, test := range testSets {
 		sb := StringBuilder{}
-		isValid := sb.IsValid (test.value)
+		isValid := sb.IsValid(test.value)
 		if isValid != test.expect {
 			t.Errorf("[%d] Fail to test, result doesn't meet expectation", i)
 		}
@@ -41,28 +41,28 @@ func TestStringBuilder_IsValid(t *testing.T) {
 
 func TestStringBuilder_ApplyQuery(t *testing.T) {
 	testSets := []struct {
-		field string
+		field     string
 		condition string
-		expect string
+		expect    string
 	}{
 		{
 			"name",
-			"[eq;Andy Wijaya]",
+			"[eq:Andy Wijaya]",
 			`SELECT * FROM "products" WHERE name = 'Andy Wijaya'`,
 		},
 		{
 			"name",
-			"[neq;Andy Wijaya]",
+			"[neq:Andy Wijaya]",
 			`SELECT * FROM "products" WHERE name != 'Andy Wijaya'`,
 		},
 		{
 			"name",
-			"[like;%Andy Wijaya%]",
+			"[like:%Andy Wijaya%]",
 			`SELECT * FROM "products" WHERE name LIKE '%Andy Wijaya%'`,
 		},
 		{
 			"id",
-			"[eq;31a01baf-b650-45a1-bb2e-211c6533518c]",
+			"[eq:31a01baf-b650-45a1-bb2e-211c6533518c]",
 			`SELECT * FROM "products" WHERE id = '31a01baf-b650-45a1-bb2e-211c6533518c'`,
 		},
 	}

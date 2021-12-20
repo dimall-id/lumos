@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	NumericPattern = "\\[(?P<type>numeric);(?P<condition>(?:(?P<op_one>gt|gte|eq|neq):(?P<val_one>[\\d]+))?,?(?:(?P<op_two>lt|lte):(?P<val_two>[\\d]+))?)\\]"
+	NumericPattern = "\\[(?:(?P<op_one>gt|gte|eq|neq):(?P<val_one>[\\d]+))?,?(?:(?P<op_two>lt|lte):(?P<val_two>[\\d]+))?\\]"
 )
 
-type NumericBuilder struct {}
+type NumericBuilder struct{}
 
-func (dd *NumericBuilder) IsValid (value string) bool {
+func (dd *NumericBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(NumericPattern)
 	return r.MatchString(value)
 }
 
-func (dd *NumericBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (dd *NumericBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(NumericPattern, condition)
 	if cond == nil {
 		return db
