@@ -9,26 +9,26 @@ import (
 
 func TestListBuilder_IsValid(t *testing.T) {
 	testSets := []struct {
-		value string
+		value  string
 		expect bool
 	}{
 		{
-			"[in;name,description]",
+			"[in:name,description]",
 			true,
 		},
 		{
-			"[nin;name,description]",
+			"[nin:name,description]",
 			true,
 		},
 		{
-			"[nin;name,Andy Wijaya]",
+			"[nin:name,Andy Wijaya]",
 			true,
 		},
 	}
 
-	for i,test := range testSets {
+	for i, test := range testSets {
 		sb := ListBuilder{}
-		isValid := sb.IsValid (test.value)
+		isValid := sb.IsValid(test.value)
 		if isValid != test.expect {
 			t.Errorf("[%d] Fail to test, result doesn't meet expectation", i)
 		}
@@ -37,18 +37,18 @@ func TestListBuilder_IsValid(t *testing.T) {
 
 func TestListBuilder_ApplyQuery(t *testing.T) {
 	testSets := []struct {
-		field string
+		field     string
 		condition string
-		expect string
+		expect    string
 	}{
 		{
 			"name",
-			"[in;name,description]",
+			"[in:name,description]",
 			`SELECT * FROM "products" WHERE name IN ($1,$2)`,
 		},
 		{
 			"name",
-			"[nin;name,description]",
+			"[nin:name,description]",
 			`SELECT * FROM "products" WHERE name NOT IN ($1,$2)`,
 		},
 	}

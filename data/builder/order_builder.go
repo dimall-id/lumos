@@ -9,22 +9,22 @@ import (
 )
 
 const (
-	OrderPattern = "\\[(?P<type>order);(?P<condition>(?:(?:[a-zA-Z\\_\\.]+):(?:asc|desc))(?:,?(?:[a-zA-Z\\_\\.]+):(?:asc|desc))*)\\]"
+	OrderPattern = "\\[(?P<condition>(?:(?:[a-zA-Z\\_\\.]+):(?:asc|desc))(?:,?(?:[a-zA-Z\\_\\.]+):(?:asc|desc))*)\\]"
 )
 
-type OrderBuilder struct {}
+type OrderBuilder struct{}
 
-func (ob *OrderBuilder) IsValid (value string) bool {
+func (ob *OrderBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(OrderPattern)
 	return r.MatchString(value)
 }
 
-func (ob *OrderBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (ob *OrderBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(OrderPattern, condition)
 	if cond == nil {
 		return db
 	}
-	orders := strings.Split(cond["condition"],",")
+	orders := strings.Split(cond["condition"], ",")
 	tx := db
 	for _, order := range orders {
 		o := strings.Split(order, ":")

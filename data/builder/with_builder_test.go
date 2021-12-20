@@ -4,16 +4,16 @@ import "testing"
 
 func TestWithBuilder_IsValid(t *testing.T) {
 	testSets := []struct {
-		value string
+		value  string
 		expect bool
 	}{
 		{
-			"[with;productImages]",
+			"[with:productImages]",
 			true,
 		},
 	}
 
-	for i,test := range testSets {
+	for i, test := range testSets {
 		db := WithBuilder{}
 		isValid := db.IsValid(test.value)
 		if isValid != test.expect {

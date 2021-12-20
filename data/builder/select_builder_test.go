@@ -9,11 +9,11 @@ import (
 
 func TestSelectBuilder_IsValid(t *testing.T) {
 	testSets := []struct {
-		value string
+		value  string
 		expect bool
 	}{
 		{
-			"[select;name,description]",
+			"[select:name,description]",
 			true,
 		},
 		{
@@ -22,9 +22,9 @@ func TestSelectBuilder_IsValid(t *testing.T) {
 		},
 	}
 
-	for i,test := range testSets {
+	for i, test := range testSets {
 		sb := SelectBuilder{}
-		isValid := sb.IsValid (test.value)
+		isValid := sb.IsValid(test.value)
 		if isValid != test.expect {
 			t.Errorf("[%d] Fail to test, result doesn't meet expectation", i)
 		}
@@ -33,13 +33,13 @@ func TestSelectBuilder_IsValid(t *testing.T) {
 
 func TestSelectBuilder_AddQuery(t *testing.T) {
 	testSets := []struct {
-		field string
+		field     string
 		condition string
-		expect string
+		expect    string
 	}{
 		{
 			"select",
-			"[select;name,description]",
+			"[select:name,description]",
 			`SELECT "name","description" FROM "products"`,
 		},
 	}
@@ -52,7 +52,7 @@ func TestSelectBuilder_AddQuery(t *testing.T) {
 		sb := SelectBuilder{}
 		db = sb.ApplyQuery(db, test.field, test.condition)
 		var datas []Product
-		stmt := db.Find(&datas).Statement;
+		stmt := db.Find(&datas).Statement
 		if strings.TrimSpace(stmt.SQL.String()) != test.expect {
 			t.Error("Fail to test, doesn't generate expected SQL query")
 		}

@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	ListPattern = "\\[(?P<type>(?:in|nin));(?P<condition>[a-zA-Z0-9\\s\\%\\-\\,]+)\\]"
+	ListPattern = "\\[(?P<type>(?:in|nin)):(?P<condition>[a-zA-Z0-9\\s\\%\\-\\,]+)\\]"
 )
 
-type ListBuilder struct {}
+type ListBuilder struct{}
 
-func (lb *ListBuilder) IsValid (value string) bool {
+func (lb *ListBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(ListPattern)
 	return r.MatchString(value)
 }
 
-func (lb *ListBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (lb *ListBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(ListPattern, condition)
 	if cond == nil {
 		return db

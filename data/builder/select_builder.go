@@ -8,17 +8,17 @@ import (
 import "github.com/dimall-id/lumos/v2/misc"
 
 const (
-	SelectPattern = "\\[(?P<type>select);(?P<condition>[a-zA-Z,]+)\\]"
+	SelectPattern = "\\[(?P<type>select):(?P<condition>[a-zA-Z,]+)\\]"
 )
 
-type SelectBuilder struct {}
+type SelectBuilder struct{}
 
-func (sb *SelectBuilder) IsValid (value string) bool {
+func (sb *SelectBuilder) IsValid(value string) bool {
 	r := regexp.MustCompile(SelectPattern)
 	return r.MatchString(value)
 }
 
-func (sb *SelectBuilder) ApplyQuery (db *gorm.DB, field string, condition string) *gorm.DB {
+func (sb *SelectBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *gorm.DB {
 	cond := misc.BuildToMap(SelectPattern, condition)
 	if cond == nil {
 		return db
