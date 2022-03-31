@@ -14,66 +14,66 @@ import (
 )
 
 type Config struct {
-	Host string
+	Host             string
 	DatasourceConfig DatasourceConfig
-	PoolDuration time.Duration
+	PoolDuration     time.Duration
 }
 
 type DatasourceConfig struct {
-	Host string
-	Port uint16
-	User string
+	Host     string
+	Port     uint16
+	User     string
 	Password string
 	Database string
-	SslMode string
+	SslMode  string
 }
 
 type LumosOutbox struct {
-	Id string `json:"id" gorm:"id,primaryKey;type:varchar;size:50"`
-	KafkaTopic string `json:"kafka_topic" gorm:"kafka_topic;type:varchar;size:500;notNull"`
-	KafkaKey string `json:"kafka_key" gorm:"kafka_key;type:varchar;size:500;notNull"`
-	KafkaValue string `json:"kafka_value" gorm:"kafka_value;type:varchar;size:50000;notNull"`
-	KafkaHeaderKeys string `json:"kafka_header_keys" gorm:"kafka_header_keys;type:varchar;size:50000"`
+	Id                string `json:"id" gorm:"id,primaryKey;type:varchar;size:50"`
+	KafkaTopic        string `json:"kafka_topic" gorm:"kafka_topic;type:varchar;size:500;notNull"`
+	KafkaKey          string `json:"kafka_key" gorm:"kafka_key;type:varchar;size:500;notNull"`
+	KafkaValue        string `json:"kafka_value" gorm:"kafka_value;type:varchar;size:50000;notNull"`
+	KafkaHeaderKeys   string `json:"kafka_header_keys" gorm:"kafka_header_keys;type:varchar;size:50000"`
 	KafkaHeaderValues string `json:"kafka_header_values" gorm:"kafka_header_values;type:varchar;size:50000"`
-	CreatedAt int64 `json:"created_at" gorm:"created_at;notNull"`
-	DeliveredAt int64 `json:"delivered_at" gorm:"delivered_at"`
-	Status string `json:"status" gorm:"status,type:varchar;size:100;index:status_index;notNull"`
+	CreatedAt         int64  `json:"created_at" gorm:"created_at;notNull"`
+	DeliveredAt       int64  `json:"delivered_at" gorm:"delivered_at"`
+	Status            string `json:"status" gorm:"status,type:varchar;size:100;index:status_index;notNull"`
 }
 
 type LumosMessage struct {
-	Topic string
-	Key string
-	Value string
+	Topic   string
+	Key     string
+	Value   string
 	Headers map[string]string
 }
 
-func initOutboxTable (DB *pgx.ConnPool) error {
+func initOutboxTable(DB *pgx.ConnPool) error {
 	query := `
 		CREATE OR REPLACE FUNCTION public.new_queue_message()
 		 RETURNS trigger
 		 LANGUAGE plpgsql
 		AS $function$
-				declare
-					payload jsonb;
-				begin
-					
-					if new.status::varchar = 'QUEUE'::varchar then 
-						payload = row_to_json(NEW);
-						PERFORM pg_notify('lumos_ouboxes', payload::Text);
-						return new;
-					end if;
-					return new;
+			declare
+				payload varchar;
+			begin
 				
-				end; 
-				$function$;
+				if new.status::varchar = 'QUEUE'::varchar then 
+					payload = new.id::varchar;
+					PERFORM pg_notify('lumos_ouboxes', payload::Text);
+					return new;
+				end if;
+				return new;
+			
+			end; 
+		$function$;
 		
 		CREATE table if not exists public.lumos_outboxes (
 			id varchar(50) NOT NULL,
 			kafka_topic varchar(255) NOT NULL,
 			kafka_key varchar(500) NOT NULL,
-			kafka_value varchar(50000) NOT NULL,
+			kafka_value text NOT NULL,
 			kafka_header_keys varchar(50000) NULL,
-			kafka_header_values varchar(50000) NULL,
+			kafka_header_values text NULL,
 			created_at int8 NOT NULL,
 			delivered_at int8 NULL,
 			status varchar(100) NOT NULL,
@@ -98,7 +98,7 @@ func initOutboxTable (DB *pgx.ConnPool) error {
 	return err
 }
 
-func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
+func GenerateKafkaMessage(message LumosOutbox) (kafka.Message, error) {
 	var headers []kafka.Header
 	var keys []string
 	var values []string
@@ -111,46 +111,46 @@ func GenerateKafkaMessage (message LumosOutbox) (kafka.Message,error) {
 		values = make([]string, 0)
 		headers = make([]kafka.Header, 0)
 	}
-	for idx , key := range keys {
+	for idx, key := range keys {
 		if idx < len(values) {
 			headers = append(headers, kafka.Header{Key: key, Value: []byte(values[idx])})
 		}
 	}
 
-	data := map[string]string {
-		"id" : message.Id,
-		"data" : message.KafkaValue,
+	data := map[string]string{
+		"id":   message.Id,
+		"data": message.KafkaValue,
 	}
-	j,e := json.Marshal(data)
+	j, e := json.Marshal(data)
 	if e != nil {
 		return kafka.Message{}, e
 	}
 	return kafka.Message{
 		Headers: headers,
-		Key: []byte(message.KafkaKey),
-		Value: j,
+		Key:     []byte(message.KafkaKey),
+		Value:   j,
 	}, nil
 }
 
-func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
+func GenerateOutbox(DB *gorm.DB, message LumosMessage) error {
 	var keys = make([]string, len(message.Headers))
 	var values = make([]string, len(message.Headers))
 	var i = 0
 	for k, v := range message.Headers {
 		keys[i] = k
 		values[i] = v
-		i ++
+		i++
 	}
 
 	data := LumosOutbox{
-		Id: uuid.New().String(),
-		KafkaTopic: message.Topic,
-		KafkaKey: message.Key,
-		KafkaValue: message.Value,
-		KafkaHeaderKeys: strings.Join(keys[:], ","),
+		Id:                uuid.New().String(),
+		KafkaTopic:        message.Topic,
+		KafkaKey:          message.Key,
+		KafkaValue:        message.Value,
+		KafkaHeaderKeys:   strings.Join(keys[:], ","),
 		KafkaHeaderValues: strings.Join(values[:], ","),
-		CreatedAt: time.Now().Unix(),
-		Status: "QUEUE",
+		CreatedAt:         time.Now().Unix(),
+		Status:            "QUEUE",
 	}
 
 	tx := DB.Save(data)
@@ -158,10 +158,10 @@ func GenerateOutbox (DB *gorm.DB, message LumosMessage) error {
 	return tx.Error
 }
 
-func SendMessage (topic string, config Config, message kafka.Message) error {
+func SendMessage(topic string, config Config, message kafka.Message) error {
 	w := &kafka.Writer{
-		Addr : kafka.TCP(config.Host),
-		Topic: topic,
+		Addr:     kafka.TCP(config.Host),
+		Topic:    topic,
 		Balancer: kafka.CRC32Balancer{},
 	}
 
@@ -170,12 +170,12 @@ func SendMessage (topic string, config Config, message kafka.Message) error {
 	return err
 }
 
-func StartProducer (config Config) error {
+func StartProducer(config Config) error {
 	conn, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig : pgx.ConnConfig{
-			Host: config.DatasourceConfig.Host,
-			Port: config.DatasourceConfig.Port,
-			User: config.DatasourceConfig.User,
+		ConnConfig: pgx.ConnConfig{
+			Host:     config.DatasourceConfig.Host,
+			Port:     config.DatasourceConfig.Port,
+			User:     config.DatasourceConfig.User,
 			Password: config.DatasourceConfig.Password,
 			Database: config.DatasourceConfig.Database,
 		},
@@ -189,16 +189,16 @@ func StartProducer (config Config) error {
 
 	log.Warn("migrating outbox table")
 	err = initOutboxTable(conn)
-	if err != nil{
+	if err != nil {
 		log.Errorf("fail to init outbox table due to '%s'", err)
 		return err
 	}
 	log.Warn("success migrating outbox table")
 
 	lconn, err := pgx.Connect(pgx.ConnConfig{
-		Host: config.DatasourceConfig.Host,
-		Port: config.DatasourceConfig.Port,
-		User: config.DatasourceConfig.User,
+		Host:     config.DatasourceConfig.Host,
+		Port:     config.DatasourceConfig.Port,
+		User:     config.DatasourceConfig.User,
 		Password: config.DatasourceConfig.Password,
 		Database: config.DatasourceConfig.Database,
 	})
@@ -220,13 +220,18 @@ func StartProducer (config Config) error {
 			return err
 		}
 		go func() {
+			id := msg.Payload
 			var message LumosOutbox
-			err = json.Unmarshal([]byte(msg.Payload), &message)
+			rows, err := conn.Query(fmt.Sprintf("SELECT * FROM public.lumos_outboxes WHERE id = '%s'", id))
 			if err != nil {
-				log.Errorf("fail to decode message due to '%s'", err)
-				return
+				log.Error("fail to fetch lumos_outboxes data")
+				log.Error(err)
 			}
-
+			err = rows.Scan(message)
+			if err != nil {
+				log.Error("fail to scan message data")
+				log.Error(err)
+			}
 			kMessage, err := GenerateKafkaMessage(message)
 			if err != nil {
 				log.Errorf("fail to generate kafka message due to '%s'", err)
