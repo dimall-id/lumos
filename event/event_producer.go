@@ -170,6 +170,16 @@ func SendMessage(topic string, config Config, message kafka.Message) error {
 	return err
 }
 
+func getLumosOutbox(id string, conn *pgx.ConnPool) (LumosOutbox, error) {
+	message := LumosOutbox{}
+	row := conn.QueryRow(fmt.Sprintf("SELECT * FROM public.lumos_outboxes WHERE id = '%s'", id))
+	err := row.Scan(&message.Id, &message.KafkaTopic, &message.KafkaKey, &message.KafkaValue, &message.KafkaHeaderKeys, &message.KafkaHeaderValues, &message.CreatedAt, &message.DeliveredAt, &message.Status)
+	if err != nil {
+		return LumosOutbox{}, err
+	}
+	return message, nil
+}
+
 func StartProducer(config Config) error {
 	conn, err := pgx.NewConnPool(pgx.ConnPoolConfig{
 		ConnConfig: pgx.ConnConfig{
@@ -221,16 +231,11 @@ func StartProducer(config Config) error {
 		}
 		go func() {
 			id := msg.Payload
-			var message LumosOutbox
-			rows, err := conn.Query(fmt.Sprintf("SELECT * FROM public.lumos_outboxes WHERE id = '%s'", id))
+			message, err := getLumosOutbox(id, conn)
 			if err != nil {
-				log.Error("fail to fetch lumos_outboxes data")
+				log.Errorf("fail to get lumos outbox data")
 				log.Error(err)
-			}
-			err = rows.Scan(message)
-			if err != nil {
-				log.Error("fail to scan message data")
-				log.Error(err)
+				return
 			}
 			kMessage, err := GenerateKafkaMessage(message)
 			if err != nil {
