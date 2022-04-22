@@ -2,12 +2,13 @@ package builder
 
 import (
 	"fmt"
-	"github.com/dimall-id/lumos/v2/misc"
-	"gorm.io/gorm"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dimall-id/lumos/v2/misc"
+	"gorm.io/gorm"
 )
 
 const (
@@ -33,7 +34,7 @@ func (dd *DateBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *
 		month, _ := strconv.Atoi(split[1])
 		date, _ := strconv.Atoi(split[0])
 		valOne := time.Date(year, time.Month(month), date, 0, 0, 0, 0, time.UTC)
-		query := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_one"]), valOne.Unix())
+		query := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_one"]), valOne.UnixMilli())
 		tx := tx.Where(query)
 		return tx
 	} else {
@@ -42,14 +43,14 @@ func (dd *DateBuilder) ApplyQuery(db *gorm.DB, field string, condition string) *
 		month, _ := strconv.Atoi(split[1])
 		date, _ := strconv.Atoi(split[0])
 		valOne := time.Date(year, time.Month(month), date, 0, 0, 0, 0, time.UTC)
-		queryOne := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_one"]), valOne.Unix())
+		queryOne := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_one"]), valOne.UnixMilli())
 
 		split = strings.Split(cond["val_two"], "-")
 		year, _ = strconv.Atoi(split[2])
 		month, _ = strconv.Atoi(split[1])
 		date, _ = strconv.Atoi(split[0])
 		valTwo := time.Date(year, time.Month(month), date, 0, 0, 0, 0, time.UTC)
-		queryTwo := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_two"]), valTwo.Unix())
+		queryTwo := fmt.Sprintf("%s%s%d", field, GetOperator(cond["op_two"]), valTwo.UnixMilli())
 		tx := tx.Where(queryOne).Where(queryTwo)
 		return tx
 	}
