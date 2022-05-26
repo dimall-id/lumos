@@ -1,75 +1,81 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
 
+var ErrNotFoundResponse = errors.New("record not found")
+var ErrBadRequestResponse = errors.New("bad request")
+var ErrInternalServerError = errors.New("internal server error")
+var ErrUnknownResponse = errors.New("unknown response")
+
 func InternalServerError(cause string) Response {
 	return Response{
 		StatusCode: http.StatusInternalServerError,
-		Body: map[string]interface{} {
-			"message" : "internal server error",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "internal server error",
+			"cause":   cause,
 		},
 	}
 }
 
 func BadRequest(cause string) Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusBadRequest,
-		Body: map[string]interface{} {
-			"message" : "bad request",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "bad request",
+			"cause":   cause,
 		},
 	}
 }
 
 func Unauthorized(cause string) Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusUnauthorized,
-		Body: map[string]interface{} {
-			"message" : "unauthorized",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "unauthorized",
+			"cause":   cause,
 		},
 	}
 }
 
 func PaymentRequired() Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusPaymentRequired,
-		Body: map[string]interface{} {
-			"message" : "payment required",
+		Body: map[string]interface{}{
+			"message": "payment required",
 		},
 	}
 }
 
 func Forbidden(cause string) Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusForbidden,
-		Body: map[string]interface{} {
-			"message" : "forbidden",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "forbidden",
+			"cause":   cause,
 		},
 	}
 }
 
 func NotFound(cause string) Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusNotFound,
-		Body: map[string]interface{} {
-			"message" : "not found",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "not found",
+			"cause":   cause,
 		},
 	}
 }
 
 func MethodNotAllow(cause string) Response {
-	return Response {
+	return Response{
 		StatusCode: http.StatusMethodNotAllowed,
-		Body: map[string]interface{} {
-			"message" : "method not allowed",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "method not allowed",
+			"cause":   cause,
 		},
 	}
 }
@@ -77,9 +83,9 @@ func MethodNotAllow(cause string) Response {
 func UnprocessableEntity(errors map[string][]string) Response {
 	return Response{
 		StatusCode: http.StatusUnprocessableEntity,
-		Body: map[string]interface{} {
-			"message" : "unprocessable entity",
-			"errors" : errors,
+		Body: map[string]interface{}{
+			"message": "unprocessable entity",
+			"errors":  errors,
 		},
 	}
 }
@@ -87,9 +93,9 @@ func UnprocessableEntity(errors map[string][]string) Response {
 func NotImplemented(cause string) Response {
 	return Response{
 		StatusCode: http.StatusNotImplemented,
-		Body: map[string]interface{} {
-			"message" : "unprocessable entity",
-			"cause" : cause,
+		Body: map[string]interface{}{
+			"message": "unprocessable entity",
+			"cause":   cause,
 		},
 	}
 }
