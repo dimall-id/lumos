@@ -159,8 +159,9 @@ func GenerateOutbox(DB *gorm.DB, message LumosMessage) error {
 }
 
 func SendMessage(topic string, config Config, message kafka.Message) error {
+	Brokers := strings.Split(config.Host, ",")
 	w := &kafka.Writer{
-		Addr:     kafka.TCP(config.Host),
+		Addr:     kafka.TCP(Brokers...),
 		Topic:    topic,
 		Balancer: kafka.CRC32Balancer{},
 	}
